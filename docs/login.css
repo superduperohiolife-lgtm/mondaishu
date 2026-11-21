@@ -1,0 +1,5 @@
+.loginbox { position: fixed; inset: 0; background: rgba(251, 250, 247, .97); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.loginbox form, .loginbox > p { background: #fff; border: 1px solid #d9dee5; padding: 24px 28px; border-radius: 8px; text-align: center; font-family: "Meiryo UI", Meiryo, sans-serif; }
+.loginbox input { font-size: 20px; padding: 8px 10px; width: 14em; max-width: 70vw; border: 1px solid #9aa5b1; border-radius: 6px; }
+.loginbox button { margin-left: 8px; font-size: 18px; padding: 8px 16px; border: 0; border-radius: 6px; background: #2f6f4f; color: #fff; cursor: pointer; }
+.loginbox .loginmsg { color: #b33a3a; min-height: 1.4em; margin: 10px 0 0; }

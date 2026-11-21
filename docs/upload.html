@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>問題集</title>
+<link rel="stylesheet" href="login.css">
+<style>
+  :root { --ink: #1f2933; --sub: #52606d; --line: #d9dee5; --bg: #fbfaf7; --accent: #2f6f4f; --accent-soft: #e5f0ea; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Meiryo UI", Meiryo, sans-serif; font-size: 18px; line-height: 1.6; }
+  header { padding: 16px 18px 10px; border-bottom: 2px solid var(--ink); }
+  header h1 { margin: 0; font-size: 24px; }
+  main { padding: 16px 18px 60px; }
+  h2 { font-size: 19px; margin: 18px 0 10px; }
+  .muted { color: var(--sub); }
+  .sheet { display: block; width: 100%; text-align: left; font: inherit; padding: 14px 16px; margin-bottom: 10px;
+    background: #fff; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .sheet.on { border: 2px solid var(--accent); background: var(--accent-soft); }
+  .sheet small { display: block; color: var(--sub); font-size: 15px; }
+  .big { display: block; width: 100%; font: inherit; font-size: 20px; padding: 16px; border-radius: 8px; text-align: center; cursor: pointer;
+    border: 1px solid var(--accent); background: #fff; color: var(--accent); margin-top: 12px; }
+  .big.primary { background: var(--accent); color: #fff; }
+  .big:disabled { opacity: .45; }
+  input[type=file] { display: none; }
+  .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .thumbs div { position: relative; }
+  .thumbs img { width: 100%; border: 1px solid var(--line); display: block; }
+  .thumbs button { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 15px; border: none; border-radius: 4px; background: rgba(0,0,0,.6); color: #fff; padding: 2px 8px; }
+  .done { padding: 30px 0; text-align: center; font-size: 22px; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
+</style>
+</head>
+<body>
+<header><h1>用紙を送る</h1></header>
+<main id="main"><p class="muted">読み込み中…</p></main>
+<input type="file" id="camera" accept="image/*" capture="environment" onchange="addPhotos(this)">
+<input type="file" id="library" accept="image/*" multiple onchange="addPhotos(this)">
+<div id="toast"></div>
+
+<script src="api.js"></script>
+<script>
+let LIST = [], picked = null, photos = [];
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(function () { t.style.display = 'none'; }, 2500);
+}
+function fail(e) { toast('エラー：' + (e && e.message ? e.message : e)); }
+
+async function load() {
+  try { LIST = await call('listWaiting'); } catch (e) { return fail(e); }
+  picked = LIST.length === 1 ? LIST[0].row : null;
+  photos = [];
+  render();
+}
+
+function render() {
+  let h = '';
+  if (!LIST.length) {
+    h = '<p class="done">送る用紙はない</p><p class="muted">PCで問題用紙の「答えを見る」を押すと、ここに出る</p>' +
+      '<button class="big" onclick="load()">もう一度さがす</button>';
+    document.getElementById('main').innerHTML = h;
+    return;
+  }
+  h += '<h2>1. どの用紙？</h2>' + LIST.map(function (s) {
+    return '<button class="sheet ' + (s.row === picked ? 'on' : '') + '" onclick="pick(' + s.row + ')">' + esc(s.label) +
+      '<small>' + esc(s.when) + '　全' + s.count + '問</small></button>';
+  }).join('');
+  h += '<h2>2. ○×をつけた紙をとる</h2><p class="muted">紙全体が入るように、明るいところでとる。2枚以上になってもよい</p>' +
+    '<button class="big" onclick="document.getElementById(\'camera\').click()" ' + (picked ? '' : 'disabled') + '>カメラでとる</button>' +
+    '<button class="big" onclick="document.getElementById(\'library\').click()" ' + (picked ? '' : 'disabled') + '>とった写真から選ぶ</button>' +
+    '<div class="thumbs">' + photos.map(function (u, i) {
+      return '<div><img src="' + u + '"><button onclick="removePhoto(' + i + ')">けす</button></div>';
+    }).join('') + '</div>';
+  h += '<h2>3. 送る</h2><button class="big primary" id="sendBtn" onclick="send()" ' + (picked && photos.length ? '' : 'disabled') + '>' +
+    (photos.length ? photos.length + '枚 送る' : '送る') + '</button>';
+  document.getElementById('main').innerHTML = h;
+}
+
+function pick(row) { picked = row; render(); }
+function removePhoto(i) { photos.splice(i, 1); render(); }
+
+/* 長い辺1600pxに縮めてJPEGにする */
+function shrink(file) {
+  return new Promise(function (resolve, reject) {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function () {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('写真を読みこめない')); };
+    img.src = url;
+  });
+}
+
+async function addPhotos(input) {
+  const files = Array.prototype.slice.call(input.files);
+  input.value = '';
+  try {
+    const add = await Promise.all(files.map(shrink));
+    photos = photos.concat(add).slice(0, 6);
+    if (photos.length === 6) toast('6枚まで');
+  } catch (e) { fail(e); }
+  render();
+}
+
+async function send() {
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = '送っています…';
+  try {
+    const r = await call('uploadPhotos', picked, photos);
+    document.getElementById('main').innerHTML = '<p class="done">' + r.count + '枚 送った</p>' +
+      '<button class="big" onclick="load()">ほかの用紙を送る</button>';
+  } catch (e) {
+    fail(e);
+    btn.disabled = false; btn.textContent = photos.length + '枚 送る';
+  }
+}
+
+startApp(function (title) {
+  document.title = '用紙を送る';
+  load();
+});
+</script>
+</body>
+</html>

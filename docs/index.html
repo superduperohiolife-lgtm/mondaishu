@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>問題集</title>
+<link rel="stylesheet" href="login.css">
+<style>
+  :root {
+    --ink: #1f2933;
+    --sub: #52606d;
+    --line: #d9dee5;
+    --bg: #fbfaf7;
+    --accent: #2f6f4f;
+    --accent-soft: #e5f0ea;
+    --ng: #b33a3a;
+    --ng-soft: #f8e6e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Meiryo UI", Meiryo, sans-serif; font-size: 18px; line-height: 1.7;
+  }
+  header {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding: 18px 32px 8px; border-bottom: 2px solid var(--ink);
+  }
+  header h1 { margin: 0; font-size: 26px; }
+  #countdown { font-size: 20px; }
+  #countdown b { font-size: 30px; color: var(--accent); margin: 0 4px; }
+  nav { display: flex; gap: 4px; padding: 0 32px; border-bottom: 1px solid var(--line); background: #fff; }
+  nav button {
+    border: none; background: none; font: inherit; font-size: 19px; padding: 12px 20px; cursor: pointer;
+    color: var(--sub); border-bottom: 3px solid transparent;
+  }
+  nav button.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: bold; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 32px 80px; }
+  h2 { font-size: 22px; margin: 8px 0 16px; }
+  h3 { font-size: 19px; margin: 28px 0 10px; }
+  .muted { color: var(--sub); }
+  .banner { background: #fff4d6; padding: 8px 32px; font-size: 17px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: middle; }
+  th { font-weight: normal; color: var(--sub); border-bottom: 2px solid var(--line); }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  tr.done td { color: var(--sub); text-decoration: line-through; }
+  input[type=checkbox] { width: 22px; height: 22px; vertical-align: middle; }
+  .btn {
+    font: inherit; font-size: 17px; padding: 6px 16px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--accent); background: #fff; color: var(--accent);
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .subjects { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .subjects button { font: inherit; padding: 6px 20px; border: 1px solid var(--line); background: #fff; border-radius: 20px; cursor: pointer; }
+  .subjects button.on { border-color: var(--accent); background: var(--accent-soft); font-weight: bold; }
+  select { font: inherit; padding: 4px 8px; }
+  .timer { display: flex; align-items: center; gap: 14px; padding: 14px 0; flex-wrap: wrap; }
+  #timerClock { font-size: 28px; font-variant-numeric: tabular-nums; min-width: 110px; }
+  .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; min-width: 120px; }
+  .bar span { display: block; height: 100%; background: var(--accent); }
+
+  /* 演習画面 */
+  #session { max-width: 1200px; margin: 0 auto; padding: 24px 32px 80px; }
+  .ans { white-space: pre-wrap; }
+  .pageimg { margin: 10px 0; overflow: auto; max-height: 88vh; border: 1px solid var(--line); background: #fff; }
+  .pageimg img { display: block; width: 100%; cursor: zoom-in; }
+  .pageimg img.zoom { width: 220%; max-width: none; cursor: zoom-out; }
+  .qhead { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .qhead .where { font-size: 19px; }
+  .qhead .count { font-size: 19px; color: var(--sub); }
+  .figure { margin: 18px 0; }
+  .figure img { max-width: 100%; border: 1px solid var(--line); }
+  .guide { margin: 16px 0 8px; padding: 12px 18px; background: #fff; border: 1px solid var(--line); }
+  .guide ol { margin: 0; padding-left: 24px; }
+  .q { display: grid; grid-template-columns: 52px 1fr; gap: 0 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .q .no { font-size: 24px; font-weight: bold; color: var(--accent); text-align: right; }
+  .q .loc { font-size: 15px; color: var(--sub); }
+  .q .prompt { font-size: 20px; white-space: pre-wrap; margin: 2px 0; }
+  .q .choices { font-size: 19px; margin-top: 4px; }
+  .q .choices span { display: inline-block; margin-right: 22px; }
+  .q .ans { margin-top: 8px; padding: 8px 14px; border-left: 5px solid var(--ng); background: var(--ng-soft); font-size: 19px; }
+  .q .ans small { display: block; font-size: 16px; color: var(--sub); }
+  .actions { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .step { margin-top: 28px; padding: 16px 20px; background: #fff; border: 1px solid var(--line); }
+  .step h3 { margin: 0 0 8px; }
+  .weak td { vertical-align: top; }
+  .status-chip { font-size: 16px; background: #fff4d6; padding: 2px 10px; border-radius: 4px; margin-left: 8px; }
+  .result { font-size: 26px; margin: 30px 0; }
+  .empty { padding: 30px 0; color: var(--sub); }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="appTitle">問題集</h1>
+  <div id="countdown"></div>
+</header>
+<div id="checkBanner" class="banner" style="display:none">確認モード：「要確認」の問題も表示中（解答集との照合用）</div>
+<nav id="tabs">
+  <button data-view="today" class="on">きょう</button>
+  <button data-view="practice">問題を解く</button>
+  <button data-view="review">復習</button>
+  <button data-view="progress">進み具合</button>
+</nav>
+<main id="main"><p class="muted">読み込み中…</p></main>
+<div id="session" style="display:none"></div>
+<div id="toast"></div>
+
+<script src="api.js"></script>
+<script>
+const CHECK_MODE = new URLSearchParams(location.search).get('mode') === 'check';
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+let D = null;              // getBootstrap の結果
+let view = 'today';
+let practiceSubject = null;
+let timer = { start: null, id: null };
+let LAUNCH = [];           // 「解く」ボタン用の出題条件
+function launch(filter, label) { LAUNCH.push({ filter: filter, label: label }); return 'go(' + (LAUNCH.length - 1) + ')'; }
+function go(i) { const L = LAUNCH[i]; startSession(Object.assign({}, L.filter), L.label); }
+
+/* ---------- 共通 ---------- */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function jpDate(ymd) {
+  const d = new Date(ymd + 'T00:00:00Z');
+  return (d.getUTCMonth() + 1) + '月' + d.getUTCDate() + '日（' + WD[d.getUTCDay()] + '）';
+}
+function hm(min) {
+  min = Math.round(min);
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? (h + '時間' + (m ? m + '分' : '')) : m + '分';
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(function () { t.style.display = 'none'; }, 2200);
+}
+function fail(e) { toast('エラー：' + (e && e.message ? e.message : e)); }
+
+async function load() {
+  D = await call('getBootstrap', CHECK_MODE);
+  document.getElementById('countdown').innerHTML = D.daysLeft > 0
+    ? 'テストまで あと<b>' + D.daysLeft + '</b>日'
+    : (D.daysLeft === 0 ? '<b>きょうがテスト</b>' : 'テストは終わった');
+  render();
+}
+
+function render() {
+  document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.view === view); });
+  const main = document.getElementById('main');
+  LAUNCH = [];
+  main.innerHTML = ({ today: viewToday, practice: viewPractice, review: viewReview, progress: viewProgress })[view]();
+  if (view === 'today') bindTimer();
+}
+
+/* ---------- きょう ---------- */
+function viewToday() {
+  const day = D.days.find(function (d) { return d.date === D.today; });
+  const tasks = D.plan.filter(function (p) { return p.date === D.today; });
+  const studied = D.log.filter(function (l) { return l.date === D.today; }).reduce(function (s, l) { return s + l.minutes; }, 0);
+  const goal = day ? day.hours * 60 : 0;
+  let h = '<h2>' + jpDate(D.today) + (day ? '　勉強できる時間 ' + day.hours + '時間' : '') + '</h2>';
+
+  h += '<div class="timer"><select id="timerSubject">' +
+    D.subjects.map(function (s) { return '<option>' + s + '</option>'; }).join('') +
+    '</select><button class="btn primary" id="timerBtn">はじめる</button><span id="timerClock">0:00</span>' +
+    '<span>きょう ' + hm(studied) + (goal ? ' ／ ' + hm(goal) : '') + '</span>' +
+    (goal ? '<div class="bar" style="width:200px"><span style="width:' + Math.min(100, studied / goal * 100) + '%"></span></div>' : '') +
+    '</div>';
+
+  h += '<h3>きょうやること</h3>';
+  if (!tasks.length) {
+    h += '<p class="empty">きょうの計画はまだ入っていない</p>';
+  } else {
+    h += '<table><tr><th style="width:56px">済</th><th style="width:80px">教科</th><th>内容</th><th class="num">目安</th><th></th></tr>' +
+      tasks.map(function (t) {
+        return '<tr class="' + (t.done ? 'done' : '') + '"><td><input type="checkbox" ' + (t.done ? 'checked' : '') +
+          ' onchange="togglePlan(' + t.row + ', this.checked)"></td><td>' + esc(t.subject) + '</td><td>' + esc(t.task) +
+          '</td><td class="num">' + (t.minutes ? hm(t.minutes) : '') + '</td><td class="num">' +
+          (t.filter ? '<button class="btn" onclick="' + launch({ filterText: t.filter, subject: t.subject }, t.subject + '：' + t.task) + '">解く</button>' : '') + '</td></tr>';
+      }).join('') + '</table>';
+  }
+
+  const upcoming = D.days.filter(function (d) { return d.date > D.today; });
+  if (upcoming.length) {
+    h += '<h3>これからの予定</h3><table><tr><th>日付</th><th class="num">勉強できる時間</th><th>やること</th></tr>' +
+      upcoming.map(function (d) {
+        const ts = D.plan.filter(function (p) { return p.date === d.date; });
+        return '<tr><td>' + jpDate(d.date) + '</td><td class="num">' + d.hours + '時間</td><td>' +
+          (ts.length ? ts.map(function (t) { return esc(t.subject); }).join('・') : '<span class="muted">未定</span>') + '</td></tr>';
+      }).join('') + '</table>';
+  }
+  return h;
+}
+
+function bindTimer() {
+  const btn = document.getElementById('timerBtn');
+  if (timer.start) { btn.textContent = 'おわる'; tick(); }
+  btn.onclick = async function () {
+    if (!timer.start) {
+      timer.start = Date.now();
+      timer.subject = document.getElementById('timerSubject').value;
+      timer.id = setInterval(tick, 1000);
+      btn.textContent = 'おわる';
+    } else {
+      clearInterval(timer.id);
+      const min = (Date.now() - timer.start) / 60000;
+      const subject = timer.subject;
+      timer = { start: null, id: null };
+      if (min >= 1) {
+        await call('logStudy', subject, min).catch(fail);
+        toast(subject + ' ' + hm(min) + ' を記録した');
+        await load();
+      } else {
+        toast('1分未満なので記録しない');
+        render();
+      }
+    }
+  };
+}
+function tick() {
+  const el = document.getElementById('timerClock');
+  if (!el || !timer.start) return;
+  const s = Math.floor((Date.now() - timer.start) / 1000);
+  el.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  const sel = document.getElementById('timerSubject');
+  if (sel) { sel.value = timer.subject; sel.disabled = true; }
+}
+
+async function togglePlan(row, done) {
+  await call('setPlanDone', row, done).catch(fail);
+  const t = D.plan.find(function (p) { return p.row === row; });
+  if (t) t.done = done;
+  render();
+}
+
+/* ---------- 問題を解く ---------- */
+function viewPractice() {
+  if (!practiceSubject) practiceSubject = (D.index[0] && D.index[0].subject) || D.subjects[0];
+  let h = '<div class="subjects">' + D.subjects.map(function (s) {
+    return '<button class="' + (s === practiceSubject ? 'on' : '') + '" onclick="practiceSubject=\'' + s + '\';render()">' + s + '</button>';
+  }).join('') + '</div>';
+  const rows = D.index.filter(function (g) { return g.subject === practiceSubject; });
+  if (!rows.length) return h + '<p class="empty">' + practiceSubject + 'の問題はまだ入っていない</p>';
+  h += '<table><tr><th>教材</th><th class="num">ページ</th><th class="num">問題数</th><th class="num">解いた</th><th class="num">覚えた</th><th></th></tr>' +
+    rows.map(function (g) {
+      const f = { subject: g.subject, book: g.book, pageFrom: Number(g.page), pageTo: Number(g.page) };
+      const pl = g.title || ('p.' + g.page);
+      const label = g.subject + '：' + g.book + ' ' + pl;
+      return '<tr><td>' + esc(g.book) + '</td><td class="num">' + esc(pl) + '</td><td class="num">' + g.total +
+        '</td><td class="num">' + g.done + '</td><td class="num">' + g.mastered + '</td><td class="num">' +
+        '<button class="btn primary" onclick="' + launch(f, label) + '">問題用紙</button> ' +
+        '<button class="btn" ' + (g.done === g.total ? 'disabled' : '') + ' onclick="' + launch(Object.assign({}, f, { mode: 'new' }), label + '（まだの問題）') + '">まだの問題</button>' +
+        '</td></tr>';
+    }).join('') + '</table>';
+  return h;
+}
+
+/* ---------- 復習 ---------- */
+function viewReview() {
+  let h = '<h2>間違えた問題</h2><p class="muted">送った用紙の○×をもとに出す。2回続けて正解すると「覚えた」になって、ここから消える</p>' +
+    (D.waiting ? '<p>スマホでまだ送っていない用紙が ' + D.waiting + '件ある</p>' : '') +
+    (D.pending ? '<p>分析待ちの用紙が ' + D.pending + '件ある</p>' : '');
+  h += '<table><tr><th>教科</th><th class="num">復習する問題</th><th></th></tr>' +
+    D.subjects.map(function (s) {
+      const n = D.index.filter(function (g) { return g.subject === s; }).reduce(function (a, g) { return a + g.review; }, 0);
+      return '<tr><td>' + s + '</td><td class="num">' + n + '問</td><td class="num">' +
+        '<button class="btn primary" ' + (n ? '' : 'disabled') + ' onclick="' + launch({ subject: s, mode: 'review' }, s + 'の復習') + '">復習する</button></td></tr>';
+    }).join('') + '</table>';
+  return h;
+}
+
+/* ---------- 進み具合 ---------- */
+function viewProgress() {
+  let h = '<h2>進み具合</h2><table><tr><th>教科</th><th class="num">問題数</th><th class="num">解いた</th><th class="num">覚えた</th><th class="num">正解率</th><th class="num">勉強時間</th></tr>';
+  D.subjects.forEach(function (s) {
+    const gs = D.index.filter(function (g) { return g.subject === s; });
+    const sum = function (k) { return gs.reduce(function (a, g) { return a + g[k]; }, 0); };
+    const tries = sum('tries');
+    const mins = D.log.filter(function (l) { return l.subject === s; }).reduce(function (a, l) { return a + l.minutes; }, 0);
+    h += '<tr><td>' + s + '</td><td class="num">' + sum('total') + '</td><td class="num">' + sum('done') + '</td><td class="num">' + sum('mastered') +
+      '</td><td class="num">' + (tries ? Math.round(sum('correct') / tries * 100) + '%' : '―') + '</td><td class="num">' + hm(mins) + '</td></tr>';
+  });
+  h += '</table>';
+  const doneN = D.plan.filter(function (p) { return p.done; }).length;
+  const totalMin = D.log.reduce(function (a, l) { return a + l.minutes; }, 0);
+  const goalMin = D.days.reduce(function (a, d) { return a + d.hours * 60; }, 0);
+  h += '<h3>計画</h3><p>やることの完了 ' + doneN + ' ／ ' + D.plan.length + '　　勉強時間の合計 ' + hm(totalMin) + ' ／ ' + hm(goalMin) + '</p>';
+  h += '<h3>苦手なところ</h3>';
+  if (!D.weak.length) {
+    h += '<p class="empty">' + (D.pending ? '送った用紙を分析中' : 'まだない（用紙を送ると、ここに出る）') + '</p>';
+  } else {
+    h += '<table class="weak"><tr><th>日付</th><th>教科</th><th>範囲</th><th>苦手な点</th><th>対策</th></tr>' +
+      D.weak.map(function (w) {
+        return '<tr><td>' + esc(w.date) + '</td><td>' + esc(w.subject) + '</td><td>' + esc(w.range) + '</td><td>' + esc(w.point) + '</td><td>' + esc(w.action) + '</td></tr>';
+      }).join('') + '</table>';
+  }
+  return h;
+}
+
+/* ---------- 問題用紙 ---------- */
+let S = null;
+
+async function startSession(filter, label) {
+  filter.checkMode = CHECK_MODE;
+  let qs;
+  try { qs = await call('getQuestions', filter); } catch (e) { return fail(e); }
+  if (!qs.length) return toast('出せる問題がない');
+  S = { label: label, qs: qs, answers: null, photos: [] };
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('tabs').style.display = 'none';
+  document.getElementById('session').style.display = 'block';
+  showSheet();
+  window.scrollTo(0, 0);
+}
+
+function endSession() {
+  S = null;
+  document.getElementById('session').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('tabs').style.display = 'flex';
+  load().catch(fail);
+}
+
+function showSheet() {
+  const KANA = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク'];
+  let h = '<div class="qhead"><span class="where">' + esc(S.label) + '　全' + S.qs.length + '問</span>' +
+    '<span class="count"><button class="btn" onclick="endSession()">もどる</button></span></div>';
+  h += '<div class="guide"><ol><li>紙に「番号」と「答え」を書く（記号の問題は記号でも言葉でもよい。ワークのページは、ワークの番号のとおりに書く。写真はクリックで拡大）</li>' +
+    '<li>全部書いたら、いちばん下の「答えを見る」で答え合わせをして、紙に赤で○×をつける</li>' +
+    '<li>○×をつけた紙を、スマホの「用紙を送る」ページで写真にとって送る</li></ol></div>';
+  let lastFig = '';
+  S.qs.forEach(function (q, i) {
+    h += '<div class="q"><div class="no">' + (i + 1) + '</div><div>';
+    h += '<div class="loc">' + esc(q.type === 'ページ' ? q.book + '　' + q.big : q.book + ' p.' + q.page + '　' + (q.big ? q.big + ' ' : '') + (q.small || '')) +
+      (CHECK_MODE && q.status !== '確認済' ? '<span class="status-chip">' + esc(q.status) + '</span>' : '') + '</div>';
+    if (q.type === 'ページ') {
+      h += '<div class="prompt">' + esc(q.prompt) + '</div><div class="pageimg" data-fig="' + esc(q.figureId) + '">読み込み中…</div>';
+      if (S.answers) h += answerHtml(S.answers[i]);
+      h += '</div></div>';
+      return;
+    }
+    if (q.figureId && q.figureId !== lastFig) {
+      h += '<div class="figure"><button class="btn" data-fig="' + esc(q.figureId) + '" onclick="toggleFigure(this)">図を見る</button><div></div></div>';
+    }
+    lastFig = q.figureId || lastFig;
+    h += '<div class="prompt">' + esc(q.prompt) + '</div>';
+    if (q.choices.length) {
+      h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (KANA[k] || '') + '　' + esc(c) + '</span>'; }).join('') + '</div>';
+    }
+    if (S.answers) h += answerHtml(S.answers[i]);
+    h += '</div></div>';
+  });
+  if (!S.answers) {
+    h += '<div class="step"><h3>全部書けたら</h3><div class="actions"><button class="btn primary" id="ansBtn" onclick="showAnswers()">答えを見る</button></div></div>';
+  } else {
+    h += '<div class="step"><h3>○×をつけたら、スマホで紙を送る</h3>' +
+      '<p>スマホの「用紙を送る」ページを開いて、<b>' + esc(S.label) + '</b> を選んで写真をとる</p>' +
+      '<div class="actions"><button class="btn" onclick="endSession()">終わる</button></div></div>';
+  }
+  document.getElementById('session').innerHTML = h;
+  loadPageImgs();
+}
+
+function answerHtml(a) {
+  if (/^img:/.test(a.answer)) {
+    return '<div class="ans">答え（解答集）' + a.answer.slice(4).split(',').map(function (id) {
+      return '<div class="pageimg" data-fig="' + esc(id.trim()) + '">読み込み中…</div>';
+    }).join('') + '</div>';
+  }
+  if (a.type === 'ページ' && !a.answer) return '<div class="ans">答えは解答集で確かめる（アプリにはまだ入っていない）</div>';
+  return '<div class="ans">' + (a.type === '記述' ? '答えの例：' : '答え：') + esc(a.answer) +
+    (a.explanation ? '<small>' + esc(a.explanation) + '</small>' : '') + '</div>';
+}
+
+/* ワークのページ写真：自動で読み込み、クリックで拡大 */
+function loadPageImgs() {
+  document.querySelectorAll('.pageimg[data-fig]').forEach(async function (box) {
+    const id = box.dataset.fig;
+    box.removeAttribute('data-fig');
+    try {
+      if (!FIG[id]) FIG[id] = await call('getFigure', id);
+      box.innerHTML = '<img alt="ページ" src="' + FIG[id] + '" onclick="this.classList.toggle(\'zoom\')">';
+    } catch (e) { box.textContent = '写真を読み込めない'; }
+  });
+}
+
+async function showAnswers() {
+  if (!confirmAll()) return;
+  const ids = S.qs.map(function (q) { return q.id; });
+  try {
+    S.answers = await call('getAnswers', ids);
+    if (!S.subRow) S.subRow = await call('startSubmission', S.label, ids);
+  } catch (e) { return fail(e); }
+  showSheet();
+}
+function confirmAll() {
+  const b = document.getElementById('ansBtn');
+  if (b && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '本当に全部書いた？（もう一度押す）'; return false; }
+  return true;
+}
+
+const FIG = {};
+async function toggleFigure(btn) {
+  const box = btn.nextElementSibling, id = btn.dataset.fig;
+  if (box.innerHTML) { box.innerHTML = ''; btn.textContent = '図を見る'; return; }
+  if (!FIG[id]) {
+    btn.disabled = true; btn.textContent = '読み込み中…';
+    try { FIG[id] = await call('getFigure', id); } catch (e) { btn.disabled = false; btn.textContent = '図を見る'; return fail(e); }
+    btn.disabled = false;
+  }
+  box.innerHTML = '<img alt="図" src="' + FIG[id] + '">';
+  btn.textContent = '図をとじる';
+}
+
+/* ---------- 起動 ---------- */
+document.querySelectorAll('#tabs button').forEach(function (b) {
+  b.onclick = function () { view = b.dataset.view; render(); };
+});
+if (CHECK_MODE) document.getElementById('checkBanner').style.display = 'block';
+startApp(function (title) {
+  document.title = title;
+  document.getElementById('appTitle').textContent = title;
+  load().catch(fail);
+});
+</script>
+</body>
+</html>
