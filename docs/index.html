@@ -69,8 +69,12 @@
   .qhead { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
   .qhead .where { font-size: 19px; }
   .qhead .count { font-size: 19px; color: var(--sub); }
-  .figure { margin: 18px 0; }
-  .figure img { max-width: 100%; border: 1px solid var(--line); }
+  .figure { margin: 12px 0; }
+  .figure img { display: block; max-width: 100%; max-height: 70vh; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
+  .figure.again img { max-height: 200px; }
+  .figure img.zoom { max-height: none; max-width: none; width: 180%; cursor: zoom-out; }
+  .figure.again .note { font-size: 12px; color: var(--muted, #666); margin-bottom: 4px; }
+  .figure { overflow: auto; }
   .guide { margin: 16px 0 8px; padding: 12px 18px; background: #fff; border: 1px solid var(--line); }
   .guide ol { margin: 0; padding-left: 24px; }
   .q { display: grid; grid-template-columns: 52px 1fr; gap: 0 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
@@ -330,7 +334,7 @@ function showSheet() {
   const KANA = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク'];
   let h = '<div class="qhead"><span class="where">' + esc(S.label) + '　全' + S.qs.length + '問</span>' +
     '<span class="count"><button class="btn" onclick="endSession()">もどる</button></span></div>';
-  h += '<div class="guide"><ol><li>紙に「番号」と「答え」を書く（記号の問題は記号でも言葉でもよい。ワークのページは、ワークの番号のとおりに書く。写真はクリックで拡大）</li>' +
+  h += '<div class="guide"><ol><li>紙に「番号」と「答え」を書く（記号の問題は記号でも言葉でもよい。ワークのページは、ワークの番号のとおりに書く。図はクリックで拡大）</li>' +
     '<li>全部書いたら、いちばん下の「答えを見る」で答え合わせをして、紙に赤で○×をつける</li>' +
     '<li>○×をつけた紙を、スマホの「用紙を送る」ページで写真にとって送る</li></ol></div>';
   let lastFig = '';
@@ -344,10 +348,12 @@ function showSheet() {
       h += '</div></div>';
       return;
     }
-    if (q.figureId && q.figureId !== lastFig) {
-      h += '<div class="figure"><button class="btn" data-fig="' + esc(q.figureId) + '" onclick="toggleFigure(this)">図を見る</button><div></div></div>';
+    if (q.figureId) {
+      const again = q.figureId === lastFig;
+      h += '<div class="figure' + (again ? ' again' : '') + '">' + (again ? '<div class="note">（前の問題と同じ図）</div>' : '') +
+        '<div class="figimg" data-fig="' + esc(q.figureId) + '">図を読み込み中…</div></div>';
     }
-    lastFig = q.figureId || lastFig;
+    lastFig = q.figureId || '';
     h += '<div class="prompt">' + esc(q.prompt) + '</div>';
     if (q.choices.length) {
       h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (KANA[k] || '') + '　' + esc(c) + '</span>'; }).join('') + '</div>';
@@ -378,13 +384,34 @@ function answerHtml(a) {
 }
 
 /* ワークのページ写真：自動で読み込み、クリックで拡大 */
+const FIGP = {};
+let figRunning = 0; const figQueue = [];
+function figSlot(fn) {
+  return new Promise(function (res, rej) {
+    figQueue.push(function () { figRunning++; fn().then(res, rej).finally(function () { figRunning--; if (figQueue.length) figQueue.shift()(); }); });
+    if (figRunning < 4) figQueue.shift()();
+  });
+}
+function getFig(id) {
+  if (FIG[id]) return Promise.resolve(FIG[id]);
+  if (!FIGP[id]) FIGP[id] = figSlot(function () { return call('getFigure', id); }).then(function (d) { FIG[id] = d; return d; }, function (e) { delete FIGP[id]; throw e; });
+  return FIGP[id];
+}
 function loadPageImgs() {
+  document.querySelectorAll('.figimg[data-fig]').forEach(async function (box) {
+    const id = box.dataset.fig;
+    box.removeAttribute('data-fig');
+    try {
+      const src = await getFig(id);
+      box.innerHTML = '<img alt="図" src="' + src + '" onclick="this.classList.toggle(\'zoom\')">';
+    } catch (e) { box.innerHTML = '図を読み込めない <button class="btn" onclick="this.parentNode.dataset.fig=\'' + esc(id) + '\';loadPageImgs()">もう一度</button>'; }
+  });
   document.querySelectorAll('.pageimg[data-fig]').forEach(async function (box) {
     const id = box.dataset.fig;
     box.removeAttribute('data-fig');
     try {
-      if (!FIG[id]) FIG[id] = await call('getFigure', id);
-      box.innerHTML = '<img alt="ページ" src="' + FIG[id] + '" onclick="this.classList.toggle(\'zoom\')">';
+      const src = await getFig(id);
+      box.innerHTML = '<img alt="ページ" src="' + src + '" onclick="this.classList.toggle(\'zoom\')">';
     } catch (e) { box.textContent = '写真を読み込めない'; }
   });
 }
