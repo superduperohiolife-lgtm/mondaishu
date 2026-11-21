@@ -356,7 +356,7 @@ function showSheet() {
     lastFig = q.figureId || '';
     h += '<div class="prompt">' + esc(q.prompt) + '</div>';
     if (q.choices.length) {
-      const labeled = q.choices.every(function (c) { return /^[ア-コA-Za-z①-⑩]{1,2}$/.test(c) || /^[ア-コA-E][ 　]/.test(c); });
+      const labeled = q.choices.every(function (c) { return /^[ア-コA-Za-z①-⑩]([^ァ-ヶー]|$)/.test(c); });
       h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (labeled ? '' : (KANA[k] || '') + '　') + esc(c) + '</span>'; }).join('') + '</div>';
     }
     if (S.answers) h += answerHtml(S.answers[i]);
