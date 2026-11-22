@@ -123,8 +123,18 @@
 <div id="session" style="display:none"></div>
 <div id="toast"></div>
 
-<script src="api.js"></script>
+<script src="api.js?v=20261122-2"></script>
 <script>
+/* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
+const BUILD = '20261122-2';
+(function () {
+  try {
+    if (sessionStorage.getItem('reloaded') === BUILD) return;
+    fetch(location.pathname + '?build=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      if (t.indexOf("const BUILD = '" + BUILD + "'") < 0) { sessionStorage.setItem('reloaded', BUILD); location.reload(); }
+    }).catch(function () {});
+  } catch (e) {}
+})();
 const CHECK_MODE = new URLSearchParams(location.search).get('mode') === 'check';
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 let D = null;              // getBootstrap の結果

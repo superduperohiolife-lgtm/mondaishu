@@ -43,8 +43,18 @@
 <input type="file" id="library" accept="image/*" multiple onchange="addPhotos(this)">
 <div id="toast"></div>
 
-<script src="api.js"></script>
+<script src="api.js?v=20261122-2"></script>
 <script>
+/* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
+const BUILD = '20261122-2';
+(function () {
+  try {
+    if (sessionStorage.getItem('reloaded') === BUILD) return;
+    fetch(location.pathname + '?build=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      if (t.indexOf("const BUILD = '" + BUILD + "'") < 0) { sessionStorage.setItem('reloaded', BUILD); location.reload(); }
+    }).catch(function () {});
+  } catch (e) {}
+})();
 /* 写真1枚ごとに「用紙番号」と「その写真に写っている番号の範囲（From〜To）」を選んで送る */
 let LIST = [], photos = [];
 function esc(s) {
