@@ -105,6 +105,26 @@
   .result { font-size: 26px; margin: 30px 0; }
   .empty { padding: 30px 0; color: var(--sub); }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
+  /* 進み具合（最初の画面） */
+  .prog { margin: 0 0 22px; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+  .prog-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin-bottom: 8px; }
+  .prog-top .cd { font-size: 18px; }
+  .prog-top .cd b { font-size: 34px; color: var(--accent); margin: 0 4px; }
+  .prog-top .all { font-size: 17px; }
+  .prog-top .all b { font-size: 24px; color: var(--accent); }
+  .prog .upd { margin-left: auto; font-size: 14px; color: var(--sub); }
+  .pbar { height: 14px; background: #edf1f4; border-radius: 7px; overflow: hidden; }
+  .pbar span { display: block; height: 100%; background: var(--accent); border-radius: 7px; transition: width .6s; }
+  .pbar.big { height: 22px; border-radius: 11px; }
+  .pbar.big span { border-radius: 11px; }
+  .psub { display: grid; grid-template-columns: 64px 1fr 1fr; gap: 10px 16px; align-items: center; margin-top: 16px; }
+  .psub .hd { font-size: 13px; color: var(--sub); }
+  .psub .nm { font-weight: bold; font-size: 17px; }
+  .psub .cell small { display: block; font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .psub .rate span { background: #c2410c; }
+  .psub .rate.mid span { background: #d97706; }
+  .psub .rate.good span { background: #15803d; }
+  .psub .na { font-size: 14px; color: var(--sub); }
 </style>
 </head>
 <body>
@@ -123,10 +143,10 @@
 <div id="session" style="display:none"></div>
 <div id="toast"></div>
 
-<script src="api.js?v=20261122-2"></script>
+<script src="api.js?v=20261122-3"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-2';
+const BUILD = '20261122-3';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -189,7 +209,8 @@ function viewToday() {
   const tasks = D.plan.filter(function (p) { return p.date === D.today; });
   const studied = D.log.filter(function (l) { return l.date === D.today; }).reduce(function (s, l) { return s + l.minutes; }, 0);
   const goal = day ? day.hours * 60 : 0;
-  let h = '<h2>' + jpDate(D.today) + (day ? '　勉強できる時間 ' + day.hours + '時間' : '') + '</h2>';
+  let h = progressPanel();
+  h += '<h2>' + jpDate(D.today) + (day ? '　勉強できる時間 ' + day.hours + '時間' : '') + '</h2>';
 
   h += '<div class="timer"><select id="timerSubject">' +
     D.subjects.map(function (s) { return '<option>' + s + '</option>'; }).join('') +
@@ -222,6 +243,34 @@ function viewToday() {
           }).join('') + '</div>' : '<span class="muted">未定</span>') + '</td></tr>';
       }).join('') + '</table>';
   }
+  return h;
+}
+
+/* テストまでの日数・全範囲の進み具合・教科ごとの「解いた割合」と「正答率（最新の結果）」 */
+function progressPanel() {
+  const by = {};
+  D.index.forEach(function (g) {
+    const b = by[g.subject] || (by[g.subject] = { total: 0, done: 0, ok: 0 });
+    b.total += g.total; b.done += g.done; b.ok += (g.last != null ? g.last : g.mastered);
+  });
+  const subs = D.subjects.filter(function (s) { return by[s] || s === '英語'; });
+  const T = subs.reduce(function (a, s) { const b = by[s]; return b ? { total: a.total + b.total, done: a.done + b.done } : a; }, { total: 0, done: 0 });
+  const pct = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
+  let h = '<div class="prog"><div class="prog-top">' +
+    '<span class="cd">' + (D.daysLeft > 0 ? 'テストまで あと<b>' + D.daysLeft + '</b>日' : (D.daysLeft === 0 ? '<b>きょうがテスト</b>' : 'テストは終わった')) + '</span>' +
+    '<span class="all">全範囲 <b>' + pct(T.done, T.total) + '%</b>　' + T.done + '／' + T.total + '問 採点ずみ</span>' +
+    (D.lastAnalyzed ? '<span class="upd">最新の採点反映 ' + esc(D.lastAnalyzed) + '（毎晩23:30に更新）</span>' : '') +
+    '</div><div class="pbar big"><span style="width:' + pct(T.done, T.total) + '%"></span></div>';
+  h += '<div class="psub"><div></div><div class="hd">解いた（採点ずみ）</div><div class="hd">正答率（最新の結果）</div>' +
+    subs.map(function (s) {
+      const b = by[s];
+      if (!b || !b.total) return '<div class="nm">' + esc(s) + '</div><div class="na" style="grid-column: span 2">問題を準備中</div>';
+      const d = pct(b.done, b.total), r = pct(b.ok, b.done);
+      return '<div class="nm">' + esc(s) + '</div>' +
+        '<div class="cell"><div class="pbar"><span style="width:' + d + '%"></span></div><small>' + d + '%　' + b.done + '／' + b.total + '問</small></div>' +
+        '<div class="cell rate ' + (r >= 80 ? 'good' : r >= 60 ? 'mid' : '') + '">' +
+        (b.done ? '<div class="pbar"><span style="width:' + r + '%"></span></div><small>' + r + '%　' + b.ok + '／' + b.done + '問 正解</small>' : '<small>まだ採点なし</small>') + '</div>';
+    }).join('') + '</div></div>';
   return h;
 }
 

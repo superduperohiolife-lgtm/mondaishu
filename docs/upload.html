@@ -43,10 +43,10 @@
 <input type="file" id="library" accept="image/*" multiple onchange="addPhotos(this)">
 <div id="toast"></div>
 
-<script src="api.js?v=20261122-2"></script>
+<script src="api.js?v=20261122-3"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-2';
+const BUILD = '20261122-3';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
