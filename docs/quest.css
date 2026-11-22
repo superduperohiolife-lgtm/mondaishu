@@ -666,6 +666,22 @@ select { font: inherit; font-size: 15px; padding: 6px 10px; border: 1px solid va
 
 .weak td { vertical-align: top; }
 
+/* リベンジ・トレイルの成果 */
+.rv-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; }
+.rv-stat { background: var(--bg-surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--radius-md); padding: 10px 14px; box-shadow: var(--shadow-sm); }
+.rv-stat.good { border-left-color: var(--rate-high-bar); }
+.rv-stat.warm { border-left-color: var(--accent-gold); }
+.rv-stat.alert { border-left-color: var(--accent-warm); }
+.rv-stat .rv-k { display: block; font-size: 13px; font-weight: 700; color: var(--sub); }
+.rv-stat b { font-size: 30px; line-height: 1.2; color: var(--ink); margin-right: 4px; }
+.rv-stat small { font-size: 13px; color: var(--sub); }
+.rv-next { margin: 0 0 14px; padding: 8px 14px; background: var(--accent-soft); border-radius: 8px; font-size: 15px; }
+.rv-table .gauge-track { min-width: 140px; }
+.rv-sub { display: block; font-size: 12px; color: var(--sub); }
+.rv-up { color: var(--rate-high-fg); }
+.rv-clear { display: inline-block; font-size: 12px; font-weight: 700; color: var(--rate-high-fg); background: var(--rate-high-bg); padding: 2px 8px; border-radius: 999px; }
+@media (max-width: 720px) { .rv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* =========================================================
    3-5. 問題を解く画面（集中モード）※最重要
    装飾をすべて消し、落ち着いた無地背景・アニメーションなし

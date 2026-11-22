@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>結輝の2学期中間クエスト</title>
 <link rel="stylesheet" href="login.css">
-<link rel="stylesheet" href="quest.css?v=20261122-4">
+<link rel="stylesheet" href="quest.css?v=20261122-8">
 </head>
 <body>
 <header class="q-header">
@@ -49,10 +49,10 @@
   </div>
 </div>
 
-<script src="api.js?v=20261122-7"></script>
+<script src="api.js?v=20261122-8"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-7';
+const BUILD = '20261122-8';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -426,6 +426,17 @@ function viewPractice() {
 
 /* ---------- 復習（リベンジ・トレイル） ---------- */
 function viewReview() {
+  const pct = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
+  const rows = D.subjects.map(function (s) {
+    const gs = D.index.filter(function (g) { return g.subject === s; });
+    const sum = function (k) { return gs.reduce(function (a, g) { return a + (g[k] || 0); }, 0); };
+    return { s: s, pk: parkOf(s), total: sum('total'), done: sum('done'), review: sum('review'), mastered: sum('mastered'), first: sum('first'), recovered: sum('recovered') };
+  });
+  const T = rows.reduce(function (a, r) {
+    ['total', 'done', 'review', 'mastered', 'first', 'recovered'].forEach(function (k) { a[k] += r[k]; });
+    return a;
+  }, { total: 0, done: 0, review: 0, mastered: 0, first: 0, recovered: 0 });
+
   let h = '<div class="revenge-banner"><h2>リベンジ・トレイル（間違えた問題）</h2>' +
     '<p>送った用紙の○×をもとに出す。2回続けて正解すると「覚えた」になって、ここから消える。</p></div>';
   if (D.waiting || D.pending) {
@@ -434,13 +445,34 @@ function viewReview() {
       (D.pending ? '<span class="notice-pill">分析待ちの用紙：' + D.pending + '件</span>' : '') +
       '</div>';
   }
-  h += '<div class="table-wrap"><table><tr><th>教科／国立公園</th><th class="num">復習する問題</th><th></th></tr>' +
-    D.subjects.map(function (s) {
-      const pk = parkOf(s);
-      const n = D.index.filter(function (g) { return g.subject === s; }).reduce(function (a, g) { return a + g.review; }, 0);
-      return '<tr><td><span class="subj-tag" style="background:' + pk.color + '">' + esc(s) + '</span><span class="subj-park-note">' + esc(pk.name) + '</span></td>' +
-        '<td class="num">' + (n ? '<b>' + n + '問</b>' : '0問') + '</td><td class="num">' +
-        '<button class="btn primary" ' + (n ? '' : 'disabled') + ' onclick="' + launch({ subject: s, mode: 'review' }, s + 'の復習') + '">復習する</button></td></tr>';
+
+  /* 全体の成果（4つの数字） */
+  h += '<div class="rv-stats">' +
+    '<div class="rv-stat"><span class="rv-k">解いた問題</span><b>' + T.done + '</b><small>／' + T.total + '問（' + pct(T.done, T.total) + '%）　残り ' + (T.total - T.done) + '問</small></div>' +
+    '<div class="rv-stat good"><span class="rv-k">1回目で正解</span><b>' + T.first + '</b><small>問（解いた問題の ' + pct(T.first, T.done) + '%）</small></div>' +
+    '<div class="rv-stat warm"><span class="rv-k">復習で取り返した</span><b>' + T.recovered + '</b><small>問　まちがえた問題を正解に</small></div>' +
+    '<div class="rv-stat alert"><span class="rv-k">リベンジ待ち</span><b>' + T.review + '</b><small>問　ここを0にすれば全問クリア</small></div>' +
+    '</div>';
+
+  /* ひとこと（いちばん早くクリアできそうな教科） */
+  const near = rows.filter(function (r) { return r.review > 0; }).sort(function (a, b) { return a.review - b.review; })[0];
+  if (near) {
+    h += '<p class="rv-next">🏁 いちばん近いゴール：<b>' + esc(near.s) + '（' + esc(near.pk.name) + '）</b>はあと <b>' + near.review + '問</b> でリベンジ完了</p>';
+  } else if (T.done) {
+    h += '<p class="rv-next">🏁 リベンジ待ちはゼロ。この調子で新しい範囲へ進もう</p>';
+  }
+
+  /* 教科ごとの表 */
+  h += '<div class="table-wrap"><table class="rv-table"><tr><th>教科／国立公園</th><th>解いた（全問中）</th><th class="num">残り</th><th class="num">1回目で正解</th><th class="num">取り返した</th><th class="num">リベンジ待ち</th><th></th></tr>' +
+    rows.map(function (r) {
+      const d = pct(r.done, r.total);
+      return '<tr><td><span class="subj-tag" style="background:' + r.pk.color + '">' + esc(r.s) + '</span><span class="subj-park-note">' + esc(r.pk.name) + '</span></td>' +
+        '<td>' + (r.total ? '<div class="gauge-track"><div class="gauge-fill" style="width:' + d + '%;background:' + r.pk.color + '"></div></div><small class="rv-sub">' + r.done + '／' + r.total + '問（' + d + '%）</small>' : '<small class="rv-sub">問題を準備中</small>') + '</td>' +
+        '<td class="num">' + (r.total ? (r.total - r.done) + '問' : '―') + '</td>' +
+        '<td class="num">' + (r.done ? r.first + '問<small class="rv-sub">' + pct(r.first, r.done) + '%</small>' : '―') + '</td>' +
+        '<td class="num">' + (r.recovered ? '<b class="rv-up">＋' + r.recovered + '問</b>' : (r.done ? '0問' : '―')) + '</td>' +
+        '<td class="num">' + (r.review ? '<b>' + r.review + '問</b>' : (r.done ? '<span class="rv-clear">クリア</span>' : '―')) + '</td>' +
+        '<td class="num"><button class="btn primary" ' + (r.review ? '' : 'disabled') + ' onclick="' + launch({ subject: r.s, mode: 'review' }, r.s + 'の復習') + '">復習する</button></td></tr>';
     }).join('') + '</table></div>';
   return h;
 }
