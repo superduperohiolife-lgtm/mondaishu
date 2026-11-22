@@ -58,6 +58,9 @@ function toast(msg) {
   setTimeout(function () { t.style.display = 'none'; }, 2500);
 }
 function fail(e) { toast('エラー：' + (e && e.message ? e.message : e)); }
+function shortLabel(s) {
+  return s.label.replace(s.code, '').replace(/（\d+問）/, '').replace(/^[\s　]*(国語|数学|理科|社会|英語)[：:]/, '').replace(/[\s　]+/g, ' ').trim();
+}
 function sheetOf(row) { return LIST.find(function (s) { return s.row === Number(row); }); }
 async function load() {
   try { LIST = await call('listSheets'); } catch (e) { return fail(e); }
@@ -88,7 +91,7 @@ function render() {
       return '<div class="photo"><img src="' + p.url + '"><div>' +
         '<label>用紙番号</label><select onchange="setRow(' + i + ', this.value)">' +
         LIST.map(function (s) {
-          return '<option value="' + s.row + '"' + (s.row === p.row ? ' selected' : '') + '>' + esc(s.code + '　' + s.label.replace(s.code, '').replace(/^[\s　：:]+/, '')) + '（' + s.count + '問）</option>';
+          return '<option value="' + s.row + '"' + (s.row === p.row ? ' selected' : '') + '>' + esc(s.code + '　' + shortLabel(s)) + '（' + s.count + '問）</option>';
         }).join('') + '</select>' +
         '<div class="range"><label>番号</label><input type="number" inputmode="numeric" value="' + p.from + '" onchange="setNum(' + i + ', \'from\', this.value)">' +
         '<span>〜</span><input type="number" inputmode="numeric" value="' + p.to + '" onchange="setNum(' + i + ', \'to\', this.value)"><span>番</span></div>' +
