@@ -49,10 +49,10 @@
   </div>
 </div>
 
-<script src="api.js?v=20261122-4"></script>
+<script src="api.js?v=20261122-5"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-4';
+const BUILD = '20261122-5';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -626,7 +626,8 @@ function choiceAnswer(choices, ans) {
   const show = function (x) {
     let t = x.text;
     if (!t) return x.lab;
-    if (/^[（(]/.test(t)) return x.full;
+    /* 「AとC」「ア→エ→イ」「A′」のように記号のすぐ後に続く選択肢は、記号と中身に分けずにそのまま出す */
+    if (/^[（(]/.test(t) || (labeled && !/^[ア-コA-Za-z①-⑩]([\s　．.:：、]|$)/.test(x.full))) return x.full;
     if (t.length > 20) t = t.slice(0, 20) + '…';
     return x.lab + '（' + t + '）';
   };
