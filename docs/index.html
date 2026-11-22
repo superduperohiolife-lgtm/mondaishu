@@ -390,7 +390,7 @@ function showSheet() {
       (CHECK_MODE && q.status !== '確認済' ? '<span class="status-chip">' + esc(q.status) + '</span>' : '') + '</div>';
     if (q.type === 'ページ') {
       h += '<div class="prompt">' + esc(q.prompt) + '</div><div class="pageimg" data-fig="' + esc(q.figureId) + '">読み込み中…</div>';
-      if (S.answers && S.answers[i]) h += answerHtml(S.answers[i]);
+      if (S.answers && S.answers[i]) h += answerHtml(S.answers[i], false, q);
       h += '</div></div>';
       if (i + 1 === S.graded && S.graded < S.qs.length) h += partDoneHtml();
       return;
@@ -406,7 +406,7 @@ function showSheet() {
       const labeled = q.choices.every(function (c) { return /^[ア-コA-Za-z①-⑩]([^ァ-ヶー]|$)/.test(c); });
       h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (labeled ? '' : (KANA[k] || '') + '　') + fmt(c, q.subject === '数学') + '</span>'; }).join('') + '</div>';
     }
-    if (S.answers && S.answers[i]) h += answerHtml(S.answers[i], q.subject === '数学');
+    if (S.answers && S.answers[i]) h += answerHtml(S.answers[i], q.subject === '数学', q);
     h += '</div></div>';
     if (i + 1 === S.graded && S.graded < S.qs.length) h += partDoneHtml();
   });
@@ -425,14 +425,47 @@ function showSheet() {
   loadPageImgs();
 }
 
-function answerHtml(a, math) {
+/* 選択問題の答えは記号で出す（例：ア（倉敷））。記号は問題用紙に表示したものと同じ */
+const CH_KANA = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク', 'ケ', 'コ'];
+const CH_LBL = /^[ア-コA-Za-z①-⑩]([^ァ-ヶー]|$)/;
+function choiceAnswer(choices, ans) {
+  const norm = function (t) { return String(t).normalize('NFKC').replace(/[\s　]/g, ''); };
+  const labeled = choices.every(function (c) { return CH_LBL.test(c); });
+  const items = choices.map(function (c, k) {
+    return labeled ? { lab: c[0], text: c.slice(1).replace(/^[\s　．.:：、]+/, ''), full: c } : { lab: CH_KANA[k], text: c, full: c };
+  });
+  const one = function (t) {
+    const n = norm(t);
+    if (!n) return null;
+    return items.find(function (x) { return norm(x.full) === n; }) || items.find(function (x) { return norm(x.text) === n; }) ||
+      (n.length === 1 ? items.find(function (x) { return x.lab === n; }) : null) || null;
+  };
+  const show = function (x) {
+    let t = x.text;
+    if (!t) return x.lab;
+    if (/^[（(]/.test(t)) return x.full;
+    if (t.length > 20) t = t.slice(0, 20) + '…';
+    return x.lab + '（' + t + '）';
+  };
+  const hit = one(ans);
+  if (hit) return show(hit);
+  const parts = String(ans).split(/[、,，・]/).filter(Boolean);
+  if (parts.length > 1) {
+    const hs = parts.map(one);
+    if (hs.every(Boolean)) return hs.map(show).join('、');
+  }
+  return null;
+}
+
+function answerHtml(a, math, q) {
   if (/^img:/.test(a.answer)) {
     return '<div class="ans">答え（解答集）' + a.answer.slice(4).split(',').map(function (id) {
       return '<div class="pageimg" data-fig="' + esc(id.trim()) + '">読み込み中…</div>';
     }).join('') + '</div>';
   }
   if (a.type === 'ページ' && !a.answer) return '<div class="ans">答えは解答集で確かめる（アプリにはまだ入っていない）</div>';
-  return '<div class="ans">' + (a.type === '記述' ? '答えの例：' : '答え：') + fmt(a.answer, math) +
+  const ch = q && q.choices && q.choices.length ? choiceAnswer(q.choices, a.answer) : null;
+  return '<div class="ans">' + (a.type === '記述' ? '答えの例：' : '答え：') + (ch ? '<b>' + fmt(ch, math) + '</b>' : fmt(a.answer, math)) +
     (a.explanation ? '<small>' + fmt(a.explanation, math) + '</small>' : '') + '</div>';
 }
 
