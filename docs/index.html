@@ -79,6 +79,9 @@
   .figure img.zoom { max-height: none; max-width: none; width: 180%; cursor: zoom-out; }
   .figure.again .note { font-size: 12px; color: var(--muted, #666); margin-bottom: 4px; }
   .figure { overflow: auto; }
+  .sheetcode { margin: 14px 0 0; padding: 10px 18px; background: #fff7d6; border: 2px solid #e0b400; font-size: 18px; }
+  .sheetcode b { font-size: 30px; letter-spacing: .06em; margin: 0 .3em; }
+  .sheetcode span { font-size: 15px; color: var(--sub); }
   .guide { margin: 16px 0 8px; padding: 12px 18px; background: #fff; border: 1px solid var(--line); }
   .guide ol { margin: 0; padding-left: 24px; }
   .q { display: grid; grid-template-columns: 52px 1fr; gap: 0 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
@@ -320,6 +323,16 @@ function fmt(t, math) {
   return h;
 }
 
+/* 用紙番号：日付＋教科＋最初のページ（例 1122社30）。紙のいちばん上に書く */
+function sheetCode(qs) {
+  const d = new Date();
+  const mmdd = ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  const subs = Array.from(new Set(qs.map(function (q) { return q.subject; })));
+  const sub = subs.length === 1 ? subs[0].charAt(0) : '混';
+  const pages = qs.map(function (q) { return Number(q.page); }).filter(function (n) { return !isNaN(n); });
+  return mmdd + sub + (pages.length ? Math.min.apply(null, pages) : '');
+}
+
 /* ---------- 問題用紙 ---------- */
 let S = null;
 
@@ -328,7 +341,8 @@ async function startSession(filter, label) {
   let qs;
   try { qs = await call('getQuestions', filter); } catch (e) { return fail(e); }
   if (!qs.length) return toast('出せる問題がない');
-  S = { label: label, qs: qs, answers: null, photos: [] };
+  const code = sheetCode(qs);
+  S = { code: code, label: code + '　' + label, qs: qs, answers: null, photos: [] };
   document.getElementById('main').style.display = 'none';
   document.getElementById('tabs').style.display = 'none';
   document.getElementById('session').style.display = 'block';
@@ -348,7 +362,8 @@ function showSheet() {
   const KANA = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク'];
   let h = '<div class="qhead"><span class="where">' + esc(S.label) + '　全' + S.qs.length + '問</span>' +
     '<span class="count"><button class="btn" onclick="endSession()">もどる</button></span></div>';
-  h += '<div class="guide"><ol><li>紙に「番号」と「答え」を書く（記号の問題は記号でも言葉でもよい。ワークのページは、ワークの番号のとおりに書く。図はクリックで拡大）</li>' +
+  h += '<div class="sheetcode">用紙番号 <b>' + esc(S.code) + '</b><span>← 紙のいちばん上に書く</span></div>';
+  h += '<div class="guide"><ol><li>紙のいちばん上に用紙番号を書き、そのあと「番号」と「答え」を書く（記号の問題は記号でも言葉でもよい。ワークのページは、ワークの番号のとおりに書く。図はクリックで拡大）</li>' +
     '<li>全部書いたら、いちばん下の「答えを見る」で答え合わせをして、紙に赤で○×をつける</li>' +
     '<li>○×をつけた紙を、スマホの「用紙を送る」ページで写真にとって送る</li></ol></div>';
   let lastFig = '';
