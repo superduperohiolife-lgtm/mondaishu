@@ -23,10 +23,15 @@
   .big.primary { background: var(--accent); color: #fff; }
   .big:disabled { opacity: .45; }
   input[type=file] { display: none; }
-  .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-  .thumbs div { position: relative; }
-  .thumbs img { width: 100%; border: 1px solid var(--line); display: block; }
-  .thumbs button { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 15px; border: none; border-radius: 4px; background: rgba(0,0,0,.6); color: #fff; padding: 2px 8px; }
+  .photo { display: grid; grid-template-columns: 110px 1fr; gap: 10px 12px; padding: 12px; margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+  .photo img { width: 110px; border: 1px solid var(--line); display: block; }
+  .photo label { display: block; font-size: 15px; color: var(--sub); }
+  .photo select, .photo input { font: inherit; font-size: 18px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .photo select { width: 100%; }
+  .photo input { width: 4.2em; text-align: center; }
+  .photo .range { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .photo .del { margin-top: 8px; font: inherit; font-size: 15px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--sub); padding: 4px 12px; }
+  .photo .err { color: #b42318; font-size: 15px; }
   .done { padding: 30px 0; text-align: center; font-size: 22px; }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
 </style>
@@ -40,8 +45,8 @@
 
 <script src="api.js"></script>
 <script>
-let LIST = [], picked = null, photos = [];
-
+/* 写真1枚ごとに「用紙番号」と「その写真に写っている番号の範囲（From〜To）」を選んで送る */
+let LIST = [], photos = [];
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -53,14 +58,18 @@ function toast(msg) {
   setTimeout(function () { t.style.display = 'none'; }, 2500);
 }
 function fail(e) { toast('エラー：' + (e && e.message ? e.message : e)); }
-
+function sheetOf(row) { return LIST.find(function (s) { return s.row === Number(row); }); }
 async function load() {
-  try { LIST = await call('listWaiting'); } catch (e) { return fail(e); }
-  picked = LIST.length === 1 ? LIST[0].row : null;
+  try { LIST = await call('listSheets'); } catch (e) { return fail(e); }
   photos = [];
   render();
 }
-
+function check(p) {
+  const s = sheetOf(p.row);
+  if (!s) return '用紙番号を選ぶ';
+  if (!(p.from >= 1 && p.to >= p.from && p.to <= s.count)) return '番号は 1〜' + s.count + ' の範囲で、From ≦ To';
+  return '';
+}
 function render() {
   let h = '';
   if (!LIST.length) {
@@ -69,24 +78,47 @@ function render() {
     document.getElementById('main').innerHTML = h;
     return;
   }
-  h += '<h2>1. どの用紙？</h2>' + LIST.map(function (s) {
-    return '<button class="sheet ' + (s.row === picked ? 'on' : '') + '" onclick="pick(' + s.row + ')">' + esc(s.label) +
-      '<small>' + esc(s.when) + '　全' + s.count + '問</small></button>';
-  }).join('');
-  h += '<h2>2. ○×をつけた紙をとる</h2><p class="muted">紙全体が入るように、明るいところでとる。2枚以上になってもよい</p>' +
-    '<button class="big" onclick="document.getElementById(\'camera\').click()" ' + (picked ? '' : 'disabled') + '>カメラでとる</button>' +
-    '<button class="big" onclick="document.getElementById(\'library\').click()" ' + (picked ? '' : 'disabled') + '>とった写真から選ぶ</button>' +
-    '<div class="thumbs">' + photos.map(function (u, i) {
-      return '<div><img src="' + u + '"><button onclick="removePhoto(' + i + ')">けす</button></div>';
-    }).join('') + '</div>';
-  h += '<h2>3. 送る</h2><button class="big primary" id="sendBtn" onclick="send()" ' + (picked && photos.length ? '' : 'disabled') + '>' +
+  h += '<h2>1. ○×をつけた紙をとる</h2><p class="muted">紙全体が入るように、明るいところでとる。何枚でもよい（1回に6枚まで）</p>' +
+    '<button class="big" onclick="document.getElementById(\'camera\').click()">カメラでとる</button>' +
+    '<button class="big" onclick="document.getElementById(\'library\').click()">とった写真から選ぶ</button>';
+  if (photos.length) {
+    h += '<h2>2. 写真ごとに用紙番号と番号の範囲を選ぶ</h2>';
+    h += photos.map(function (p, i) {
+      const err = check(p);
+      return '<div class="photo"><img src="' + p.url + '"><div>' +
+        '<label>用紙番号</label><select onchange="setRow(' + i + ', this.value)">' +
+        LIST.map(function (s) {
+          return '<option value="' + s.row + '"' + (s.row === p.row ? ' selected' : '') + '>' + esc(s.code + '　' + s.label.replace(s.code, '').replace(/^[\s　：:]+/, '')) + '（' + s.count + '問）</option>';
+        }).join('') + '</select>' +
+        '<div class="range"><label>番号</label><input type="number" inputmode="numeric" value="' + p.from + '" onchange="setNum(' + i + ', \'from\', this.value)">' +
+        '<span>〜</span><input type="number" inputmode="numeric" value="' + p.to + '" onchange="setNum(' + i + ', \'to\', this.value)"><span>番</span></div>' +
+        (err ? '<div class="err">' + esc(err) + '</div>' : '') +
+        '<button class="del" onclick="removePhoto(' + i + ')">この写真をけす</button></div></div>';
+    }).join('');
+  }
+  const ok = photos.length && photos.every(function (p) { return !check(p); });
+  h += '<h2>' + (photos.length ? '3' : '2') + '. 送る</h2><button class="big primary" id="sendBtn" onclick="send()" ' + (ok ? '' : 'disabled') + '>' +
     (photos.length ? photos.length + '枚 送る' : '送る') + '</button>';
   document.getElementById('main').innerHTML = h;
 }
-
-function pick(row) { picked = row; render(); }
+function setRow(i, row) {
+  const p = photos[i], s = sheetOf(row);
+  p.row = Number(row);
+  if (s) { p.from = 1; p.to = s.count; }
+  render();
+}
+function setNum(i, k, v) { photos[i][k] = Math.floor(Number(v)); render(); }
 function removePhoto(i) { photos.splice(i, 1); render(); }
-
+/* 新しい写真の初期値：直前の写真と同じ用紙で、その続きの番号から */
+function nextDefault() {
+  const last = photos[photos.length - 1];
+  if (last && sheetOf(last.row)) {
+    const s = sheetOf(last.row);
+    const from = Math.min(last.to + 1, s.count);
+    return { row: s.row, from: from, to: s.count };
+  }
+  return { row: LIST[0].row, from: 1, to: LIST[0].count };
+}
 /* 長い辺1600pxに縮めてJPEGにする */
 function shrink(file) {
   return new Promise(function (resolve, reject) {
@@ -103,31 +135,41 @@ function shrink(file) {
     img.src = url;
   });
 }
-
 async function addPhotos(input) {
   const files = Array.prototype.slice.call(input.files);
   input.value = '';
   try {
     const add = await Promise.all(files.map(shrink));
-    photos = photos.concat(add).slice(0, 6);
-    if (photos.length === 6) toast('6枚まで');
+    add.forEach(function (u) {
+      if (photos.length >= 6) return;
+      const d = nextDefault();
+      photos.push({ url: u, row: d.row, from: d.from, to: d.to });
+    });
+    if (photos.length >= 6) toast('1回に6枚まで');
   } catch (e) { fail(e); }
   render();
 }
-
 async function send() {
   const btn = document.getElementById('sendBtn');
-  btn.disabled = true; btn.textContent = '送っています…';
+  btn.disabled = true;
+  let n = 0;
   try {
-    const r = await call('uploadPhotos', picked, photos);
-    document.getElementById('main').innerHTML = '<p class="done">' + r.count + '枚 送った</p>' +
-      '<button class="big" onclick="load()">ほかの用紙を送る</button>';
+    for (let i = 0; i < photos.length; i++) {
+      btn.textContent = '送っています… ' + (i + 1) + '/' + photos.length;
+      const p = photos[i];
+      await call('uploadPhoto', p.row, p.from, p.to, p.url);
+      n++;
+    }
+    document.getElementById('main').innerHTML = '<p class="done">' + n + '枚 送った</p>' +
+      photos.map(function (p) { const s = sheetOf(p.row); return '<p class="muted">' + esc(s ? s.code : '') + '　' + p.from + '〜' + p.to + '番</p>'; }).join('') +
+      '<button class="big" onclick="load()">ほかの写真を送る</button>';
   } catch (e) {
+    photos = photos.slice(n);
     fail(e);
-    btn.disabled = false; btn.textContent = photos.length + '枚 送る';
+    render();
+    if (n) toast(n + '枚は送れた。のこり ' + photos.length + '枚をもう一度送る');
   }
 }
-
 startApp(function (title) {
   document.title = '用紙を送る';
   load();

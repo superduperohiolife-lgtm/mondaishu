@@ -105,9 +105,6 @@
   .result { font-size: 26px; margin: 30px 0; }
   .empty { padding: 30px 0; color: var(--sub); }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
-  .partbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 20px; padding: 10px 16px; background: #eef5ff; border: 2px solid #3b82f6; font-size: 17px; }
-  .partbar input { width: 5em; font-size: 20px; padding: 4px 8px; text-align: center; }
-  .partdone { margin: 18px 0 0; padding: 12px 18px; background: #f0fdf4; border: 2px solid #16a34a; font-size: 17px; }
 </style>
 </head>
 <body>
@@ -380,13 +377,7 @@ async function startSession(filter, label) {
   if (!qs.length) return toast('出せる問題がない');
   qs.forEach(prepChoices);
   const code = sheetCode(qs, label);
-  S = { code: code, label: label.indexOf(code) >= 0 ? label : code + '　' + label, qs: qs, answers: null, photos: [], graded: 0, parts: [] };
-  S.key = 'prog_' + code + '_' + qs.length + '_' + qs[0].id + '_' + qs[qs.length - 1].id;
-  try { const sv = JSON.parse(localStorage.getItem(S.key) || 'null'); if (sv && sv.graded > 0) { S.graded = Math.min(sv.graded, qs.length); S.parts = sv.parts || []; } } catch (e) {}
-  if (S.graded) {
-    try { S.answers = await call('getAnswers', qs.slice(0, S.graded).map(function (q) { return q.id; })); }
-    catch (e) { S.answers = null; S.graded = 0; S.parts = []; fail(e); }
-  }
+  S = { code: code, label: label.indexOf(code) >= 0 ? label : code + '　' + label, qs: qs, answers: null, photos: [] };
   document.getElementById('main').style.display = 'none';
   document.getElementById('tabs').style.display = 'none';
   document.getElementById('session').style.display = 'block';
@@ -409,17 +400,16 @@ function showSheet() {
   h += '<div class="sheetcode">用紙番号 <b>' + esc(S.code) + '</b><span>← 紙のいちばん上にこれだけ書く</span></div>';
   h += '<div class="guide"><ol><li>紙のいちばん上に用紙番号（例 J01）を書き、そのあと「番号」と「答え」を書く（記号の問題は記号でも言葉でもよい。ワークのページは、ワークの番号のとおりに書く。図はクリックで拡大）</li>' +
     '<li>全部書いたら、いちばん下の「答えを見る」で答え合わせをして、紙に赤で○×をつける</li>' +
-    '<li>○×をつけた紙を、スマホの「用紙を送る」ページで写真にとって送る</li></ol></div>';
+    '<li>○×をつけた紙を、スマホの「用紙を送る」ページで写真にとり、写真ごとに用紙番号と番号の範囲を選んで送る</li></ol></div>';
   let lastFig = '';
   S.qs.forEach(function (q, i) {
-    h += '<div class="q" id="q' + (i + 1) + '"><div class="no">' + (i + 1) + '</div><div>';
+    h += '<div class="q"><div class="no">' + (i + 1) + '</div><div>';
     h += '<div class="loc">' + esc(q.type === 'ページ' ? q.book + '　' + q.big : q.book + ' p.' + q.page + '　' + (q.big ? q.big + ' ' : '') + (q.small || '')) +
       (CHECK_MODE && q.status !== '確認済' ? '<span class="status-chip">' + esc(q.status) + '</span>' : '') + '</div>';
     if (q.type === 'ページ') {
       h += '<div class="prompt">' + esc(q.prompt) + '</div><div class="pageimg" data-fig="' + esc(q.figureId) + '">読み込み中…</div>';
-      if (S.answers && S.answers[i]) h += answerHtml(S.answers[i], false, q);
+      if (S.answers) h += answerHtml(S.answers[i], false, q);
       h += '</div></div>';
-      if (i + 1 === S.graded && S.graded < S.qs.length) h += partDoneHtml();
       return;
     }
     if (q.figureId) {
@@ -433,19 +423,14 @@ function showSheet() {
       const labeled = q.choices.every(function (c) { return /^[ア-コA-Za-z①-⑩]([^ァ-ヶー]|$)/.test(c); });
       h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (labeled ? '' : (KANA[k] || '') + '　') + fmt(c, q.subject === '数学') + '</span>'; }).join('') + '</div>';
     }
-    if (S.answers && S.answers[i]) h += answerHtml(S.answers[i], q.subject === '数学', q);
+    if (S.answers) h += answerHtml(S.answers[i], q.subject === '数学', q);
     h += '</div></div>';
-    if (i + 1 === S.graded && S.graded < S.qs.length) h += partDoneHtml();
   });
-  if (S.graded < S.qs.length) {
-    h += '<div class="step"><h3>' + (S.graded ? '残り（' + (S.graded + 1) + '〜' + S.qs.length + '番）を全部書けたら' : '全部書けたら') + '</h3><div class="actions"><button class="btn primary" id="ansBtn" onclick="showAnswers()">答えを見る</button></div></div>';
-    if (S.qs.length - S.graded > 1) {
-      h += '<div class="partbar"><b>途中まで採点</b><span>' + (S.graded + 1) + '番から</span><input id="partTo" type="number" inputmode="numeric" min="' + (S.graded + 1) + '" max="' + (S.qs.length - 1) + '" placeholder="35"><span>番まで書いた</span>' +
-        '<button class="btn primary" onclick="gradePart()">そこまでの答えを見る</button></div>';
-    }
+  if (!S.answers) {
+    h += '<div class="step"><h3>全部書けたら</h3><div class="actions"><button class="btn primary" id="ansBtn" onclick="showAnswers()">答えを見る</button></div></div>';
   } else {
     h += '<div class="step"><h3>○×をつけたら、スマホで紙を送る</h3>' +
-      '<p>スマホの「用紙を送る」ページを開いて、<b>' + esc(S.parts.length ? S.parts[S.parts.length - 1] : S.label) + '</b> を選んで写真をとる</p>' +
+      '<p>スマホの「用紙を送る」ページで写真をとり、写真ごとに用紙番号 <b>' + esc(S.code) + '</b> と、その写真に写っている番号の範囲（例 1〜35）を選んで送る</p>' +
       '<div class="actions"><button class="btn" onclick="endSession()">終わる</button></div></div>';
   }
   document.getElementById('session').innerHTML = h;
@@ -531,36 +516,12 @@ function loadPageImgs() {
 
 async function showAnswers() {
   if (!confirmAll()) return;
-  await gradeTo(S.qs.length);
-}
-/* 途中まで採点：書き終えた番号までの答えを出し、その範囲だけを提出（写真待ち）に登録する */
-async function gradePart() {
-  const n = Math.floor(Number((document.getElementById('partTo') || {}).value));
-  if (!(n > S.graded && n < S.qs.length)) return toast((S.graded + 1) + '〜' + (S.qs.length - 1) + 'の番号を入れる');
-  await gradeTo(n);
-}
-async function gradeTo(n) {
-  const from = S.graded, part = S.qs.slice(from, n), ids = part.map(function (q) { return q.id; });
-  const whole = from === 0 && n === S.qs.length;
-  const label = whole ? S.label : S.label + '（' + (from + 1) + '〜' + n + '番）';
+  const ids = S.qs.map(function (q) { return q.id; });
   try {
-    const ans = await call('getAnswers', ids);
-    await call('startSubmission', label, ids);
-    S.answers = (S.answers || []).slice(0, from).concat(ans);
-    S.graded = n;
-    if (!whole) S.parts.push(label);
+    S.answers = await call('getAnswers', ids);
+    if (!S.subRow) S.subRow = await call('startSubmission', S.label, ids);
   } catch (e) { return fail(e); }
-  try {
-    if (S.graded < S.qs.length) localStorage.setItem(S.key, JSON.stringify({ graded: S.graded, parts: S.parts }));
-    else localStorage.removeItem(S.key);
-  } catch (e) {}
   showSheet();
-  const el = document.getElementById('q' + (from + 1));
-  if (el) el.scrollIntoView();
-}
-function partDoneHtml() {
-  return '<div class="partdone"><b>ここまで（' + S.graded + '番まで）採点した。</b>○×をつけたら、スマホの「用紙を送る」で <b>' + esc(S.parts[S.parts.length - 1] || S.label) + '</b> を選んで送る。' +
-    '<br>続きは ' + (S.graded + 1) + '番から。紙はそのまま続けて書いてよい。</div>';
 }
 function confirmAll() {
   const b = document.getElementById('ansBtn');
