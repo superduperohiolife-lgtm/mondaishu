@@ -69,6 +69,10 @@
   .qhead { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
   .qhead .where { font-size: 19px; }
   .qhead .count { font-size: 19px; color: var(--sub); }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: .88em; line-height: 1.15; margin: 0 .15em; }
+  .frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 .2em; }
+  .frac > span:last-child { padding: 0 .2em; }
+  i.v { font-family: 'Times New Roman', serif; font-size: 1.12em; font-style: italic; padding: 0 .04em; }
   .figure { margin: 12px 0; }
   .figure img { display: block; max-width: 100%; max-height: 70vh; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
   .figure.again img { max-height: 200px; }
@@ -306,6 +310,16 @@ function viewProgress() {
   return h;
 }
 
+/* 分数を縦書きで表示（例：(2/3)x → 2を3の上に） */
+function fmt(t, math) {
+  const F = '([0-9A-Za-z]+[₀-₉]*)';
+  let h = esc(t);
+  if (math) h = h.replace(/(^|[^A-Za-z<\/"=])([xyabn]{1,2})(?![A-Za-z])/g, function (m, p, v) { return p + v.split('').map(function (c) { return '<i class="v">' + c + '</i>'; }).join(''); });
+  return h
+    .replace(new RegExp('\\(' + F + '\\/' + F + '\\)', 'g'), '<span class="frac"><span>$1</span><span>$2</span></span>')
+    .replace(new RegExp('(^|[^0-9A-Za-z₀-₉])' + F + '\\/' + F + '(?![0-9A-Za-z])', 'g'), '$1<span class="frac"><span>$2</span><span>$3</span></span>');
+}
+
 /* ---------- 問題用紙 ---------- */
 let S = null;
 
@@ -354,12 +368,12 @@ function showSheet() {
         '<div class="figimg" data-fig="' + esc(q.figureId) + '">図を読み込み中…</div></div>';
     }
     lastFig = q.figureId || '';
-    h += '<div class="prompt">' + esc(q.prompt) + '</div>';
+    h += '<div class="prompt">' + fmt(q.prompt, q.subject === '数学') + '</div>';
     if (q.choices.length) {
       const labeled = q.choices.every(function (c) { return /^[ア-コA-Za-z①-⑩]([^ァ-ヶー]|$)/.test(c); });
-      h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (labeled ? '' : (KANA[k] || '') + '　') + esc(c) + '</span>'; }).join('') + '</div>';
+      h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (labeled ? '' : (KANA[k] || '') + '　') + fmt(c, q.subject === '数学') + '</span>'; }).join('') + '</div>';
     }
-    if (S.answers) h += answerHtml(S.answers[i]);
+    if (S.answers) h += answerHtml(S.answers[i], q.subject === '数学');
     h += '</div></div>';
   });
   if (!S.answers) {
@@ -373,15 +387,15 @@ function showSheet() {
   loadPageImgs();
 }
 
-function answerHtml(a) {
+function answerHtml(a, math) {
   if (/^img:/.test(a.answer)) {
     return '<div class="ans">答え（解答集）' + a.answer.slice(4).split(',').map(function (id) {
       return '<div class="pageimg" data-fig="' + esc(id.trim()) + '">読み込み中…</div>';
     }).join('') + '</div>';
   }
   if (a.type === 'ページ' && !a.answer) return '<div class="ans">答えは解答集で確かめる（アプリにはまだ入っていない）</div>';
-  return '<div class="ans">' + (a.type === '記述' ? '答えの例：' : '答え：') + esc(a.answer) +
-    (a.explanation ? '<small>' + esc(a.explanation) + '</small>' : '') + '</div>';
+  return '<div class="ans">' + (a.type === '記述' ? '答えの例：' : '答え：') + fmt(a.answer, math) +
+    (a.explanation ? '<small>' + fmt(a.explanation, math) + '</small>' : '') + '</div>';
 }
 
 /* ワークのページ写真：自動で読み込み、クリックで拡大 */
