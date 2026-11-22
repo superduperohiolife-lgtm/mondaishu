@@ -313,11 +313,11 @@ function viewProgress() {
 /* 分数を縦書きで表示（例：(2/3)x → 2を3の上に） */
 function fmt(t, math) {
   const F = '([0-9A-Za-z]+[₀-₉]*)';
-  let h = esc(t);
-  if (math) h = h.replace(/(^|[^A-Za-z<\/"=])([xyabn]{1,2})(?![A-Za-z])/g, function (m, p, v) { return p + v.split('').map(function (c) { return '<i class="v">' + c + '</i>'; }).join(''); });
-  return h
+  let h = esc(t)
     .replace(new RegExp('\\(' + F + '\\/' + F + '\\)', 'g'), '<span class="frac"><span>$1</span><span>$2</span></span>')
     .replace(new RegExp('(^|[^0-9A-Za-z₀-₉])' + F + '\\/' + F + '(?![0-9A-Za-z])', 'g'), '$1<span class="frac"><span>$2</span><span>$3</span></span>');
+  if (math) h = h.replace(/(^|[^A-Za-z<\/"=])([xyabn]{1,2})(?![A-Za-z])/g, function (m, p, v) { return p + v.split('').map(function (c) { return '<i class="v">' + c + '</i>'; }).join(''); });
+  return h;
 }
 
 /* ---------- 問題用紙 ---------- */
