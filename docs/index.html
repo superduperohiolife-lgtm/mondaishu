@@ -63,9 +63,8 @@
   /* 演習画面 */
   #session { max-width: 1200px; margin: 0 auto; padding: 24px 32px 80px; }
   .ans { white-space: pre-wrap; }
-  .pageimg { margin: 10px 0; overflow: auto; max-height: 88vh; border: 1px solid var(--line); background: #fff; }
-  .pageimg img { display: block; width: 100%; cursor: zoom-in; }
-  .pageimg img.zoom { width: 220%; max-width: none; cursor: zoom-out; }
+  .pageimg { margin: 10px 0; }
+  .pageimg img { display: block; max-width: 100%; max-height: 80vh; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
   .qhead { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
   .qhead .where { font-size: 19px; }
   .qhead .count { font-size: 19px; color: var(--sub); }
@@ -74,11 +73,13 @@
   .frac > span:last-child { padding: 0 .2em; }
   i.v { font-family: 'Times New Roman', serif; font-size: 1.12em; font-style: italic; padding: 0 .04em; }
   .figure { margin: 12px 0; }
-  .figure img { display: block; max-width: 100%; max-height: 70vh; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
+  .figure img { display: block; max-width: 100%; max-height: 45vh; border: 1px solid var(--line); background: #fff; cursor: zoom-in; }
   .figure.again img { max-height: 200px; }
-  .figure img.zoom { max-height: none; max-width: none; width: 180%; cursor: zoom-out; }
+  /* 拡大表示：画面にすっぽり収める。クリックかEscで閉じる */
+  #lightbox { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.82); cursor: zoom-out; }
+  #lightbox.on { display: flex; }
+  #lightbox img { max-width: 96vw; max-height: 94vh; object-fit: contain; background: #fff; }
   .figure.again .note { font-size: 12px; color: var(--muted, #666); margin-bottom: 4px; }
-  .figure { overflow: auto; }
   .plist div { display: flex; gap: 10px; padding: 2px 0; }
   .plist .ps { width: 3em; flex: none; color: var(--sub); }
   .plist .pt { flex: 1; }
@@ -104,7 +105,7 @@
   .result { font-size: 26px; margin: 30px 0; }
   .empty { padding: 30px 0; color: var(--sub); }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
-  .partbar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 20px; padding: 10px 16px; background: #eef5ff; border: 2px solid #3b82f6; font-size: 17px; }
+  .partbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 20px; padding: 10px 16px; background: #eef5ff; border: 2px solid #3b82f6; font-size: 17px; }
   .partbar input { width: 5em; font-size: 20px; padding: 4px 8px; text-align: center; }
   .partdone { margin: 18px 0 0; padding: 12px 18px; background: #f0fdf4; border: 2px solid #16a34a; font-size: 17px; }
 </style>
@@ -489,7 +490,7 @@ function loadPageImgs() {
     box.removeAttribute('data-fig');
     try {
       const src = await getFig(id);
-      box.innerHTML = '<img alt="図" src="' + src + '" onclick="this.classList.toggle(\'zoom\')">';
+      box.innerHTML = '<img alt="図" src="' + src + '" onclick="openLightbox(this.src)">';
     } catch (e) { box.innerHTML = '図を読み込めない <button class="btn" onclick="this.parentNode.dataset.fig=\'' + esc(id) + '\';loadPageImgs()">もう一度</button>'; }
   });
   document.querySelectorAll('.pageimg[data-fig]').forEach(async function (box) {
@@ -497,7 +498,7 @@ function loadPageImgs() {
     box.removeAttribute('data-fig');
     try {
       const src = await getFig(id);
-      box.innerHTML = '<img alt="ページ" src="' + src + '" onclick="this.classList.toggle(\'zoom\')">';
+      box.innerHTML = '<img alt="ページ" src="' + src + '" onclick="openLightbox(this.src)">';
     } catch (e) { box.textContent = '写真を読み込めない'; }
   });
 }
@@ -542,6 +543,20 @@ function confirmAll() {
 }
 
 const FIG = {};
+function openLightbox(src) {
+  let lb = document.getElementById('lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.innerHTML = '<img alt="拡大">';
+    lb.onclick = closeLightbox;
+    document.body.appendChild(lb);
+  }
+  lb.querySelector('img').src = src;
+  lb.classList.add('on');
+}
+function closeLightbox() { const lb = document.getElementById('lightbox'); if (lb) lb.classList.remove('on'); }
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
 async function toggleFigure(btn) {
   const box = btn.nextElementSibling, id = btn.dataset.fig;
   if (box.innerHTML) { box.innerHTML = ''; btn.textContent = '図を見る'; return; }
