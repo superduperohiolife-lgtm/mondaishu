@@ -346,6 +346,31 @@ function sheetCode(qs, label) {
 }
 
 /* ---------- 問題用紙 ---------- */
+/* 選択肢が記号だけ（ア／イ／ウ、A／B など）のとき：
+   問題文の中に「ア 〇〇　イ 〇〇」と並んでいれば、問題文から切り出して選択肢として改行して出す。
+   並んでいなければ（記号が図や文中にあるとき）、記号だけの行は意味がないので出さない */
+const BARE_LABEL = /^[ア-コA-Z①-⑩]$/;
+function prepChoices(q) {
+  if (!q.choices.length || !q.choices.every(function (c) { return BARE_LABEL.test(c.trim()); })) return;
+  const labs = q.choices.map(function (c) { return c.trim(); });
+  const pos = [];
+  let from = 0;
+  for (let k = 0; k < labs.length; k++) {
+    const re = new RegExp('(^|[\\s　。])' + labs[k] + '[\\s　]*(?=\\S)', 'g');
+    re.lastIndex = from;
+    const m = re.exec(q.prompt);
+    if (!m) break;
+    pos.push({ i: m.index + m[1].length, j: re.lastIndex });
+    from = re.lastIndex;
+  }
+  if (pos.length === labs.length) {
+    q.choices = labs.map(function (l, k) { return l + ' ' + q.prompt.slice(pos[k].j, k + 1 < pos.length ? pos[k + 1].i : undefined).trim(); });
+    q.prompt = q.prompt.slice(0, pos[0].i).trim();
+  } else {
+    q.hideChoices = true;
+  }
+}
+
 let S = null;
 
 async function startSession(filter, label) {
@@ -353,6 +378,7 @@ async function startSession(filter, label) {
   let qs;
   try { qs = await call('getQuestions', filter); } catch (e) { return fail(e); }
   if (!qs.length) return toast('出せる問題がない');
+  qs.forEach(prepChoices);
   const code = sheetCode(qs, label);
   S = { code: code, label: label.indexOf(code) >= 0 ? label : code + '　' + label, qs: qs, answers: null, photos: [], graded: 0, parts: [] };
   S.key = 'prog_' + code + '_' + qs.length + '_' + qs[0].id + '_' + qs[qs.length - 1].id;
@@ -403,7 +429,7 @@ function showSheet() {
     }
     lastFig = q.figureId || '';
     h += '<div class="prompt">' + fmt(q.prompt, q.subject === '数学') + '</div>';
-    if (q.choices.length) {
+    if (q.choices.length && !q.hideChoices) {
       const labeled = q.choices.every(function (c) { return /^[ア-コA-Za-z①-⑩]([^ァ-ヶー]|$)/.test(c); });
       h += '<div class="choices">' + q.choices.map(function (c, k) { return '<span>' + (labeled ? '' : (KANA[k] || '') + '　') + fmt(c, q.subject === '数学') + '</span>'; }).join('') + '</div>';
     }
