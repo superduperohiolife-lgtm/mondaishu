@@ -49,10 +49,10 @@
   </div>
 </div>
 
-<script src="api.js?v=20261122-6"></script>
+<script src="api.js?v=20261122-7"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-6';
+const BUILD = '20261122-7';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -628,17 +628,15 @@ function choiceAnswer(choices, ans) {
     if (!t) return x.lab;
     /* 「AとC」「ア→エ→イ」「A′」のように記号のすぐ後に続く選択肢は、記号と中身に分けずにそのまま出す */
     if (labeled && !/^[ア-コA-Za-z①-⑩]([\s　．.:：、（(]|$)/.test(x.full)) return x.full;
-    /* かっこは使わない：「ア　倉敷」の形にする（選択肢がかっこ書きなら、かっこを外す） */
-    t = t.replace(/^[（(]([^]*)[）)]$/, '$1');
-    if (t.length > 20) t = t.slice(0, 20) + '…';
-    return x.lab + '　' + t;
+    /* 選択問題の答えは記号だけ（例：オ）。選択肢の文言は出さない */
+    return x.lab;
   };
   const hit = one(ans);
   if (hit) return show(hit);
   const parts = String(ans).split(/[、,，・]/).filter(Boolean);
   if (parts.length > 1) {
     const hs = parts.map(one);
-    if (hs.every(Boolean)) return hs.map(show).join('　／　');
+    if (hs.every(Boolean)) return hs.map(show).join('、');
   }
   return null;
 }
