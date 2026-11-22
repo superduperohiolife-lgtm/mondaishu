@@ -3,50 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>問題集</title>
+<title>探検記録を送る｜結輝の2学期中間クエスト</title>
 <link rel="stylesheet" href="login.css">
-<style>
-  :root { --ink: #1f2933; --sub: #52606d; --line: #d9dee5; --bg: #fbfaf7; --accent: #2f6f4f; --accent-soft: #e5f0ea; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Meiryo UI", Meiryo, sans-serif; font-size: 18px; line-height: 1.6; }
-  header { padding: 16px 18px 10px; border-bottom: 2px solid var(--ink); }
-  header h1 { margin: 0; font-size: 24px; }
-  main { padding: 16px 18px 60px; }
-  h2 { font-size: 19px; margin: 18px 0 10px; }
-  .muted { color: var(--sub); }
-  .sheet { display: block; width: 100%; text-align: left; font: inherit; padding: 14px 16px; margin-bottom: 10px;
-    background: #fff; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
-  .sheet.on { border: 2px solid var(--accent); background: var(--accent-soft); }
-  .sheet small { display: block; color: var(--sub); font-size: 15px; }
-  .big { display: block; width: 100%; font: inherit; font-size: 20px; padding: 16px; border-radius: 8px; text-align: center; cursor: pointer;
-    border: 1px solid var(--accent); background: #fff; color: var(--accent); margin-top: 12px; }
-  .big.primary { background: var(--accent); color: #fff; }
-  .big:disabled { opacity: .45; }
-  input[type=file] { display: none; }
-  .photo { display: grid; grid-template-columns: 110px 1fr; gap: 10px 12px; padding: 12px; margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
-  .photo img { width: 110px; border: 1px solid var(--line); display: block; }
-  .photo label { display: block; font-size: 15px; color: var(--sub); }
-  .photo select, .photo input { font: inherit; font-size: 18px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-  .photo select { width: 100%; }
-  .photo input { width: 4.2em; text-align: center; }
-  .photo .range { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .photo .del { margin-top: 8px; font: inherit; font-size: 15px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--sub); padding: 4px 12px; }
-  .photo .err { color: #b42318; font-size: 15px; }
-  .done { padding: 30px 0; text-align: center; font-size: 22px; }
-  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 6px; display: none; }
-</style>
+<link rel="stylesheet" href="quest.css?v=20261122-4">
 </head>
-<body>
-<header><h1>用紙を送る</h1></header>
+<body class="upload-page">
+<header class="q-header">
+  <div class="q-brand">
+    <svg class="q-logo-svg" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="29" fill="#173227" stroke="#d99a26" stroke-width="2.5"/>
+      <path d="M12 44 L25 22 L34 35 L41 25 L52 44 Z" fill="#3a7a5c"/>
+      <path d="M18 46 Q29 41 32 37 T46 46" fill="none" stroke="#ffd57a" stroke-width="2.4" stroke-linecap="round"/>
+      <polygon points="32,8 35,16 32,14 29,16" fill="#ffd57a"/>
+    </svg>
+    <div class="q-title-wrap">
+      <h1>探検記録を送る</h1>
+      <div class="q-subtitle">FIELD REPORT UPLOAD</div>
+    </div>
+  </div>
+</header>
 <main id="main"><p class="muted">読み込み中…</p></main>
 <input type="file" id="camera" accept="image/*" capture="environment" onchange="addPhotos(this)">
 <input type="file" id="library" accept="image/*" multiple onchange="addPhotos(this)">
 <div id="toast"></div>
 
-<script src="api.js?v=20261122-3"></script>
+<script src="api.js?v=20261122-4"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-3';
+const BUILD = '20261122-4';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -86,14 +70,14 @@ function check(p) {
 function render() {
   let h = '';
   if (!LIST.length) {
-    h = '<p class="done">送る用紙はない</p><p class="muted">PCで問題用紙の「答えを見る」を押すと、ここに出る</p>' +
-      '<button class="big" onclick="load()">もう一度さがす</button>';
+    h = '<div class="q-card" style="margin-top:0"><p class="done">送る用紙はない</p><p class="muted" style="text-align:center">PCで問題用紙の「答えを見る」を押すと、ここに出る</p>' +
+      '<button class="big" onclick="load()">もう一度さがす</button></div>';
     document.getElementById('main').innerHTML = h;
     return;
   }
-  h += '<h2>1. ○×をつけた紙をとる</h2><p class="muted">紙全体が入るように、明るいところでとる。何枚でもよい（1回に6枚まで）</p>' +
+  h += '<section class="q-card" style="margin-top:0"><h2>1. ○×をつけた紙をとる</h2><p class="muted">紙全体が入るように、明るいところでとる。何枚でもよい（1回に6枚まで）</p>' +
     '<button class="big" onclick="document.getElementById(\'camera\').click()">カメラでとる</button>' +
-    '<button class="big" onclick="document.getElementById(\'library\').click()">とった写真から選ぶ</button>';
+    '<button class="big" onclick="document.getElementById(\'library\').click()">とった写真から選ぶ</button></section>';
   if (photos.length) {
     h += '<h2>2. 写真ごとに用紙番号と番号の範囲を選ぶ</h2>';
     h += photos.map(function (p, i) {
@@ -110,8 +94,8 @@ function render() {
     }).join('');
   }
   const ok = photos.length && photos.every(function (p) { return !check(p); });
-  h += '<h2>' + (photos.length ? '3' : '2') + '. 送る</h2><button class="big primary" id="sendBtn" onclick="send()" ' + (ok ? '' : 'disabled') + '>' +
-    (photos.length ? photos.length + '枚 送る' : '送る') + '</button>';
+  h += '<section class="q-card"><h2>' + (photos.length ? '3' : '2') + '. 送る</h2><button class="big primary" id="sendBtn" onclick="send()" ' + (ok ? '' : 'disabled') + '>' +
+    (photos.length ? photos.length + '枚 送る' : '送る') + '</button></section>';
   document.getElementById('main').innerHTML = h;
 }
 function setRow(i, row) {
@@ -173,9 +157,9 @@ async function send() {
       await call('uploadPhoto', p.row, p.from, p.to, p.url);
       n++;
     }
-    document.getElementById('main').innerHTML = '<p class="done">' + n + '枚 送った</p>' +
-      photos.map(function (p) { const s = sheetOf(p.row); return '<p class="muted">' + esc(s ? s.code : '') + '　' + p.from + '〜' + p.to + '番</p>'; }).join('') +
-      '<button class="big" onclick="load()">ほかの写真を送る</button>';
+    document.getElementById('main').innerHTML = '<div class="q-card" style="margin-top:0"><p class="done">' + n + '枚 送った</p>' +
+      photos.map(function (p) { const s = sheetOf(p.row); return '<p class="muted" style="text-align:center">' + esc(s ? s.code : '') + '　' + p.from + '〜' + p.to + '番</p>'; }).join('') +
+      '<button class="big" onclick="load()">ほかの写真を送る</button></div>';
   } catch (e) {
     photos = photos.slice(n);
     fail(e);
@@ -184,7 +168,7 @@ async function send() {
   }
 }
 startApp(function (title) {
-  document.title = '用紙を送る';
+  document.title = '探検記録を送る';
   load();
 });
 </script>

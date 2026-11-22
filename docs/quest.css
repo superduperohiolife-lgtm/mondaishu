@@ -1,0 +1,971 @@
+/* =========================================================
+   結輝の2学期中間クエスト 共通スタイルシート（案A：フィールドマップ調）
+   外部CDN・Webフォント・外部画像は一切使用しない
+   ========================================================= */
+:root {
+  --font-main: "Calibri", "Meiryo UI", Meiryo, sans-serif;
+
+  /* 案A：フィールドマップ調カラー */
+  --bg-page: #f4f1e8;
+  --bg-surface: #ffffff;
+  --bg-subtle: #ebe6d8;
+  --bg-header: #224436;
+  --fg-header: #f7f4ec;
+  --fg-header-sub: #c9d9ce;
+  --ink: #1f2923;
+  --sub: #556159;
+  --line: #d8d1be;
+  --accent: #2a5c47;
+  --accent-soft: #e5f0ea;
+  --accent-warm: #c96828;
+  --accent-gold: #d99a26;
+  --ng: #b33a3a;
+  --ng-soft: #f8e6e6;
+
+  /* 探検マップ専用 */
+  --map-bg: #faf7ef;
+  --map-grid: rgba(42, 92, 71, 0.07);
+  --trail-track: #d9d1bd;
+  --trail-fill: #2a5c47;
+  --badge-bg: #1c3a2e;
+  --badge-fg: #f8e3b0;
+  --table-head-bg: #e9e3d4;
+
+  /* 公園ごとのテーマカラー */
+  --park-science: #2e6b5e;   /* 理科: Yellowstone */
+  --park-social: #b3542d;    /* 社会: Grand Canyon */
+  --park-math: #c46a1f;      /* 数学: Arches */
+  --park-japanese: #3b5e82;  /* 国語: Yosemite */
+  --park-english: #6c6a75;   /* 英語: Zion（準備中） */
+
+  /* 正答率の段階色（色だけでなくアイコン＋文字でも区別） */
+  --rate-high-bg: #e3f3eb;
+  --rate-high-fg: #145c3e;
+  --rate-high-bar: #1f8a5b;
+  --rate-mid-bg: #fdf3dc;
+  --rate-mid-fg: #7d4e00;
+  --rate-mid-bar: #d48a15;
+  --rate-low-bg: #fde8e5;
+  --rate-low-fg: #94261c;
+  --rate-low-bar: #cc4436;
+  --rate-none-bg: #eceee9;
+  --rate-none-fg: #525c55;
+  --rate-none-bar: #adb5ae;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow-sm: 0 1px 3px rgba(20, 30, 24, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--ink);
+  font-family: var(--font-main);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+button, input, select { font-family: inherit; }
+
+/* =========================================================
+   3-1. ヘッダー
+   ========================================================= */
+.q-header {
+  background: var(--bg-header);
+  color: var(--fg-header);
+  padding: 14px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 3px solid var(--accent-gold);
+}
+
+.q-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.q-logo-svg {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+
+.q-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.q-header h1 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.q-subtitle {
+  font-size: 12px;
+  color: var(--fg-header-sub);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+#countdown {
+  background: rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+#countdown b {
+  font-size: 28px;
+  color: #ffd57a;
+  margin: 0 3px;
+  line-height: 1;
+}
+
+.banner {
+  background: #fff4d6;
+  color: #5a3c00;
+  padding: 8px 28px;
+  font-size: 15px;
+  border-bottom: 1px solid #e6cb85;
+}
+
+/* =========================================================
+   タブナビゲーション
+   ========================================================= */
+nav#tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 28px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+nav#tabs button {
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--sub);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+nav#tabs button small {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+nav#tabs button.on {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* =========================================================
+   メイン領域・共通要素
+   ========================================================= */
+main#main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 24px 72px;
+}
+
+h2 { font-size: 20px; margin: 14px 0 12px; }
+h3 { font-size: 17px; margin: 22px 0 10px; }
+.muted { color: var(--sub); }
+.empty { padding: 20px 0; color: var(--sub); }
+
+.q-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-top: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.q-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.q-card-head h2,
+.q-card-head h3 { margin: 0; }
+
+.q-card-sub {
+  font-size: 13px;
+  color: var(--sub);
+}
+
+/* ボタン */
+.btn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  background: #ffffff;
+  color: var(--accent);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* テーブル共通（探検マップと同じデザイン言語） */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-surface);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-surface);
+  font-size: 15px;
+}
+
+th, td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  background: var(--table-head-bg);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tr.done td { color: var(--sub); text-decoration: line-through; }
+input[type=checkbox] { width: 20px; height: 20px; vertical-align: middle; accent-color: var(--accent); cursor: pointer; }
+select { font: inherit; font-size: 15px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+
+.subj-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.subj-park-note {
+  font-size: 12px;
+  color: var(--sub);
+  margin-left: 5px;
+}
+
+/* =========================================================
+   3-2. 探検マップ（きょう画面上部）
+   ========================================================= */
+.map-panel {
+  background: var(--map-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px 18px 18px;
+  background-image:
+    linear-gradient(to right, var(--map-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--map-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.map-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.map-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.map-heading h2 { margin: 0; font-size: 18px; }
+.map-heading-sub { font-size: 13px; color: var(--sub); }
+
+.last-analyzed {
+  font-size: 12px;
+  color: var(--sub);
+  background: rgba(42, 92, 71, 0.08);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* 全体トレイル ＋ レンジャー階級バッジ */
+.trail-and-rank {
+  display: grid;
+  grid-template-columns: 1fr 245px;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.trail-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.trail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.trail-label { font-size: 14px; font-weight: 700; }
+
+.trail-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.trail-pct {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.trail-count { font-size: 14px; color: var(--sub); }
+.trail-svg-wrap { width: 100%; margin: 2px 0; }
+
+.trail-endpoints {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--sub);
+}
+
+.rank-card {
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 213, 122, 0.35);
+}
+
+.rank-emblem { width: 54px; height: 54px; flex-shrink: 0; }
+.rank-kicker { font-size: 10px; letter-spacing: 0.08em; opacity: 0.82; }
+.rank-title { font-size: 17px; font-weight: 700; color: #ffffff; line-height: 1.2; margin: 2px 0; }
+.rank-sub { font-size: 12px; opacity: 0.9; line-height: 1.35; }
+
+/* 公園カード（PCでは5枚横並び） */
+.park-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.park-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+
+.park-card.is-soon {
+  opacity: 0.85;
+  border-style: dashed;
+}
+
+.park-banner {
+  position: relative;
+  padding: 10px 11px 6px;
+  color: #ffffff;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.park-banner-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  z-index: 2;
+}
+
+.park-subject-tag {
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.park-name {
+  position: relative;
+  z-index: 2;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.park-silhouette {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 50px;
+  opacity: 0.30;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.park-card-body {
+  padding: 10px 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  flex: 1;
+}
+
+.gauge-block { display: flex; flex-direction: column; gap: 4px; }
+.gauge-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; gap: 4px; }
+.gauge-name { font-weight: 700; color: var(--sub); }
+.gauge-val { font-weight: 700; }
+.gauge-track { height: 8px; background: #e5e8e4; border-radius: 999px; overflow: hidden; }
+.gauge-fill { height: 100%; border-radius: 999px; }
+
+/* 正答率チップ（色＋アイコン＋文字） */
+.rate-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.rate-high { background: var(--rate-high-bg); color: var(--rate-high-fg); }
+.rate-mid  { background: var(--rate-mid-bg);  color: var(--rate-mid-fg); }
+.rate-low  { background: var(--rate-low-bg);  color: var(--rate-low-fg); }
+.rate-none { background: var(--rate-none-bg); color: var(--rate-none-fg); }
+
+.soon-box {
+  background: #f2f3f5;
+  color: #555a64;
+  border-radius: 8px;
+  padding: 12px 8px;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* パークスタンプ帳 */
+.stamp-section {
+  margin-top: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px 15px;
+}
+
+.stamp-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stamp-head h3 { margin: 0; font-size: 14px; }
+.stamp-counter { font-size: 12px; font-weight: 700; color: var(--accent); }
+
+.stamp-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.stamp-slot {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stamp-slot.empty {
+  border: 2px dashed #cbd0ca;
+  border-radius: 50%;
+  color: #8f9993;
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.stamp-svg { width: 70px; height: 70px; }
+
+/* =========================================================
+   3-3. 行動タイマー・予定リスト
+   ========================================================= */
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#timerClock {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  min-width: 96px;
+}
+
+.bar {
+  height: 10px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  min-width: 140px;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.plist div { display: flex; gap: 10px; padding: 3px 0; align-items: baseline; }
+.plist .ps { width: 3.4em; flex: none; font-weight: 700; color: var(--sub); }
+.plist .pt { flex: 1; }
+.plist .pm { flex: none; width: 4em; text-align: right; color: var(--sub); font-size: 14px; }
+
+/* =========================================================
+   3-4. 問題を解くタブ・復習タブ・進み具合タブ
+   ========================================================= */
+.subjects {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.subjects button {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border: 1px solid var(--line);
+  background: var(--bg-surface);
+  color: var(--ink);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.subjects button.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.revenge-banner {
+  background: var(--map-bg);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-warm);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.revenge-banner h2 { margin: 0 0 4px; font-size: 20px; }
+.revenge-banner p { margin: 0; font-size: 14px; color: var(--sub); }
+
+.notice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.notice-pill {
+  background: #fff4d6;
+  border: 1px solid #e6cb85;
+  color: #6b4700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.weak td { vertical-align: top; }
+
+/* =========================================================
+   3-5. 問題を解く画面（集中モード）※最重要
+   装飾をすべて消し、落ち着いた無地背景・アニメーションなし
+   ========================================================= */
+body.focus-mode {
+  background: #faf9f5;
+  color: #161817;
+}
+
+body.focus-mode .q-header,
+body.focus-mode #checkBanner,
+body.focus-mode nav#tabs {
+  display: none !important;
+}
+
+#session {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+/* 集中モード上部：細いバー1本だけ */
+.focus-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #ffffff;
+  border-bottom: 1px solid #dcdbd3;
+  margin: 0 -20px 18px;
+  padding: 8px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.focus-topbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.focus-mini-logo {
+  width: 22px;
+  height: 22px;
+  opacity: 0.72;
+  flex-shrink: 0;
+}
+
+.focus-code-chip {
+  display: inline-block;
+  background: #fff7d6;
+  border: 2px solid #e0b400;
+  color: #2b2100;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 1px 10px;
+  border-radius: 5px;
+}
+
+.focus-where {
+  font-size: 16px;
+  font-weight: 700;
+  color: #242926;
+}
+
+.focus-quit-btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid #bfc4bf;
+  background: #ffffff;
+  color: #363d39;
+  cursor: pointer;
+}
+
+/* 用紙番号の黄色い枠（既存仕様を維持） */
+.sheetcode {
+  margin: 12px 0 0;
+  padding: 10px 16px;
+  background: #fff7d6;
+  border: 2px solid #e0b400;
+  border-radius: 6px;
+  font-size: 17px;
+}
+
+.sheetcode b { font-size: 28px; letter-spacing: 0.06em; margin: 0 0.3em; }
+.sheetcode span { font-size: 14px; color: #525954; }
+
+.guide {
+  margin: 14px 0 10px;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid #e1e0d8;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.guide ol { margin: 0; padding-left: 22px; }
+
+.q {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 0 12px;
+  padding: 18px 16px;
+  margin-top: 12px;
+  background: #ffffff;
+  border: 1px solid #e1e0d8;
+  border-radius: 8px;
+}
+
+.q .no { font-size: 22px; font-weight: 700; color: #2a5c47; text-align: right; }
+.q .loc { font-size: 14px; color: #58605b; }
+.q .prompt { font-size: 19px; line-height: 1.8; white-space: pre-wrap; margin: 4px 0; color: #161817; }
+.q .choices { font-size: 18px; margin-top: 8px; }
+.q .choices span { display: inline-block; margin-right: 20px; margin-bottom: 4px; }
+
+/* 採点用の答え表示（採点しやすさ優先でほどよく目立たせる） */
+.q .ans {
+  white-space: pre-wrap;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-left: 5px solid #c96828;
+  background: #fff8eb;
+  border-top: 1px solid #edd6b5;
+  border-right: 1px solid #edd6b5;
+  border-bottom: 1px solid #edd6b5;
+  border-radius: 6px;
+  font-size: 19px;
+  color: #1f1b18;
+}
+
+.q .ans small { display: block; font-size: 15px; color: #4d4741; margin-top: 4px; }
+
+.frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: 0.88em; line-height: 1.15; margin: 0 0.15em; }
+.frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 0.2em; }
+.frac > span:last-child { padding: 0 0.2em; }
+i.v { font-family: "Times New Roman", serif; font-size: 1.12em; font-style: italic; padding: 0 0.04em; }
+
+.figure { margin: 12px 0; }
+.figure img { display: block; max-width: 100%; max-height: 45vh; border: 1px solid #d5d4cc; background: #ffffff; cursor: zoom-in; }
+.figure.again img { max-height: 200px; }
+.figure.again .note { font-size: 12px; color: #58605b; margin-bottom: 4px; }
+.pageimg { margin: 10px 0; }
+.pageimg img { display: block; max-width: 100%; max-height: 80vh; border: 1px solid #d5d4cc; background: #ffffff; cursor: zoom-in; }
+
+/* 図の拡大表示（画面にすっぽり収まる） */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.84);
+  cursor: zoom-out;
+}
+
+#lightbox.on { display: flex; }
+#lightbox img { max-width: 96vw; max-height: 94vh; object-fit: contain; background: #ffffff; }
+
+.status-chip { font-size: 14px; background: #fff4d6; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+.actions { margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+.step {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #dcdbd3;
+  border-radius: 8px;
+}
+
+.step h3 { margin: 0 0 8px; }
+
+/* トースト通知 */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  display: none;
+  z-index: 70;
+  font-size: 15px;
+}
+
+/* 解き終わりの小さな達成演出（1.5秒・クリックでスキップ可・reduced-motion非表示） */
+#questClearBanner {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: #224436;
+  color: #ffffff;
+  border: 2px solid #d99a26;
+  border-radius: 12px;
+  padding: 12px 18px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+  display: none;
+  align-items: center;
+  gap: 12px;
+  z-index: 80;
+  cursor: pointer;
+}
+
+#questClearBanner.on { display: flex; }
+
+@media (prefers-reduced-motion: reduce) {
+  #questClearBanner.on { display: none !important; }
+}
+
+/* =========================================================
+   3-6. スマホ「用紙を送る」画面（upload.html）
+   ========================================================= */
+body.upload-page main#main {
+  max-width: 520px;
+  padding: 16px 16px 64px;
+}
+
+body.upload-page .q-header {
+  padding: 12px 16px;
+}
+
+body.upload-page .q-header h1 {
+  font-size: 20px;
+}
+
+.big {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid var(--accent);
+  background: #ffffff;
+  color: var(--accent);
+  margin-top: 10px;
+}
+
+.big.primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.big:disabled { opacity: 0.45; cursor: default; }
+
+input[type=file] { display: none; }
+
+.photo {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 10px 12px;
+  padding: 12px;
+  margin-top: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.photo img { width: 104px; border: 1px solid var(--line); border-radius: 6px; display: block; }
+.photo label { display: block; font-size: 14px; font-weight: 700; color: var(--sub); margin-bottom: 3px; }
+.photo select, .photo input { font: inherit; font-size: 17px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: #ffffff; }
+.photo select { width: 100%; }
+.photo input { width: 4.4em; text-align: center; }
+.photo .range { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.photo .del { margin-top: 10px; font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-page); color: var(--sub); padding: 6px 12px; cursor: pointer; }
+.photo .err { color: #b42318; font-size: 14px; font-weight: 700; margin-top: 6px; }
+body.upload-page .done { padding: 26px 0 10px; text-align: center; font-size: 21px; font-weight: 700; color: var(--accent); }
+
+/* =========================================================
+   レスポンシブ（スマホ 412px 前後対応）
+   ========================================================= */
+@media (max-width: 960px) {
+  .park-grid { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .q-header { padding: 12px 14px; }
+  .q-header h1 { font-size: 19px; }
+  .q-logo-svg { width: 38px; height: 38px; }
+  nav#tabs { padding: 8px 12px; }
+  nav#tabs button { font-size: 14px; padding: 7px 11px; }
+  main#main { padding: 14px 12px 64px; }
+  .trail-and-rank { grid-template-columns: 1fr; }
+  .park-grid { grid-template-columns: 1fr; }
+  .q { grid-template-columns: 36px 1fr; padding: 14px 12px; }
+  .q .no { font-size: 19px; }
+  .q .prompt { font-size: 17px; }
+  #session { padding: 0 12px 64px; }
+  .focus-topbar { margin: 0 -12px 14px; padding: 8px 12px; }
+}
