@@ -79,6 +79,10 @@
   .figure img.zoom { max-height: none; max-width: none; width: 180%; cursor: zoom-out; }
   .figure.again .note { font-size: 12px; color: var(--muted, #666); margin-bottom: 4px; }
   .figure { overflow: auto; }
+  .plist div { display: flex; gap: 10px; padding: 2px 0; }
+  .plist .ps { width: 3em; flex: none; color: var(--sub); }
+  .plist .pt { flex: 1; }
+  .plist .pm { flex: none; width: 4em; text-align: right; }
   .sheetcode { margin: 14px 0 0; padding: 10px 18px; background: #fff7d6; border: 2px solid #e0b400; font-size: 18px; }
   .sheetcode b { font-size: 30px; letter-spacing: .06em; margin: 0 .3em; }
   .sheetcode span { font-size: 15px; color: var(--sub); }
@@ -202,7 +206,9 @@ function viewToday() {
       upcoming.map(function (d) {
         const ts = D.plan.filter(function (p) { return p.date === d.date; });
         return '<tr><td>' + jpDate(d.date) + '</td><td class="num">' + d.hours + '時間</td><td>' +
-          (ts.length ? ts.map(function (t) { return esc(t.subject); }).join('・') : '<span class="muted">未定</span>') + '</td></tr>';
+          (ts.length ? '<div class="plist">' + ts.map(function (t) {
+            return '<div><span class="ps">' + esc(t.subject) + '</span><span class="pt">' + esc(t.task) + '</span><span class="pm">' + (t.minutes ? t.minutes + '分' : '') + '</span></div>';
+          }).join('') + '</div>' : '<span class="muted">未定</span>') + '</td></tr>';
       }).join('') + '</table>';
   }
   return h;
