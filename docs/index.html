@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>結輝の2学期中間クエスト</title>
 <link rel="stylesheet" href="login.css">
-<link rel="stylesheet" href="quest.css?v=20261122-8">
+<link rel="stylesheet" href="quest.css?v=20261123-1">
 </head>
 <body>
 <header class="q-header">
@@ -49,10 +49,10 @@
   </div>
 </div>
 
-<script src="api.js?v=20261122-8"></script>
+<script src="api.js?v=20261123-1"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261122-8';
+const BUILD = '20261123-1';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -102,6 +102,7 @@ function parkOf(s) { return PARKS[s] || PARKS['理科']; }
 
 let D = null;              // getBootstrap の結果
 let view = 'today';
+const CARRY_SEEN = {};
 let practiceSubject = null;
 let timer = { start: null, id: null };
 let clearBannerTimer = null;
@@ -210,7 +211,14 @@ function render() {
 /* ---------- きょう ---------- */
 function viewToday() {
   const day = D.days.find(function (d) { return d.date === D.today; });
-  const tasks = D.plan.filter(function (p) { return p.date === D.today; });
+  /* 前の日にやり残したミッションは、きょうの一番上に持ち越して最優先にする（チェックした分もこの画面を開いている間は表示を残す） */
+  const carry = D.plan.filter(function (p) {
+    if (!(p.date < D.today)) return false;
+    if (!p.done) CARRY_SEEN[p.row] = true;
+    return !p.done || CARRY_SEEN[p.row];
+  }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : a.row - b.row; });
+  const carryLeft = carry.filter(function (p) { return !p.done; }).length;
+  const tasks = carry.concat(D.plan.filter(function (p) { return p.date === D.today; }));
   const studied = D.log.filter(function (l) { return l.date === D.today; }).reduce(function (s, l) { return s + l.minutes; }, 0);
   const goal = day ? day.hours * 60 : 0;
   let h = progressPanel();
@@ -226,15 +234,18 @@ function viewToday() {
     '</div></section>';
 
   /* 今日のミッション */
-  h += '<section class="q-card"><div class="q-card-head"><h3>今日のミッション</h3><span class="q-card-sub">完了チェックで上のパークスタンプ帳が増えます</span></div>';
+  h += '<section class="q-card"><div class="q-card-head"><h3>今日のミッション</h3><span class="q-card-sub">完了チェックで上のパークスタンプ帳が増えます</span></div>' +
+    (carryLeft ? '<p class="carry-note">前の日の残り <b>' + carryLeft + '件</b>を先にやろう。オレンジの「持ち越し」から順に進める</p>' : '');
   if (!tasks.length) {
     h += '<p class="empty">きょうの計画はまだ入っていない</p>';
   } else {
     h += '<div class="table-wrap"><table><tr><th style="width:52px">済</th><th style="width:90px">教科</th><th>内容</th><th class="num">目安</th><th></th></tr>' +
       tasks.map(function (t) {
         const pk = parkOf(t.subject);
-        return '<tr class="' + (t.done ? 'done' : '') + '"><td><input type="checkbox" ' + (t.done ? 'checked' : '') +
-          ' onchange="togglePlan(' + t.row + ', this.checked)"></td><td><span class="subj-tag" style="background:' + pk.color + '">' + esc(t.subject) + '</span></td><td>' + esc(t.task) +
+        const isCarry = t.date < D.today;
+        return '<tr class="' + (t.done ? 'done' : '') + (isCarry ? ' carry-row' : '') + '"><td><input type="checkbox" ' + (t.done ? 'checked' : '') +
+          ' onchange="togglePlan(' + t.row + ', this.checked)"></td><td><span class="subj-tag" style="background:' + pk.color + '">' + esc(t.subject) + '</span></td><td>' +
+          (isCarry ? '<span class="carry-tag">持ち越し ' + esc(jpDate(t.date)) + '分</span>' : '') + esc(t.task) +
           '</td><td class="num">' + (t.minutes ? hm(t.minutes) : '') + '</td><td class="num">' +
           (t.filter ? '<button class="btn" onclick="' + launch({ filterText: t.filter, subject: t.subject }, t.subject + '：' + t.task) + '">解く</button>' : '') + '</td></tr>';
       }).join('') + '</table></div>';
