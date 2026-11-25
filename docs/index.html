@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>結輝の2学期中間クエスト</title>
 <link rel="stylesheet" href="login.css">
-<link rel="stylesheet" href="quest.css?v=20261123-1">
+<link rel="stylesheet" href="quest.css?v=20261125-1">
 </head>
 <body>
 <header class="q-header">
@@ -49,10 +49,10 @@
   </div>
 </div>
 
-<script src="api.js?v=20261123-1"></script>
+<script src="api.js?v=20261125-1"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261123-1';
+const BUILD = '20261125-1';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -209,16 +209,21 @@ function render() {
 }
 
 /* ---------- きょう ---------- */
+/* 内容に「時間があれば」とある計画は、持ち越し・きょうのミッションに入れず、別の枠に出す（優先度いちばん下） */
+function isOptionalPlan(p) { return /時間があれば/.test(String(p.task)); }
+
 function viewToday() {
   const day = D.days.find(function (d) { return d.date === D.today; });
   /* 前の日にやり残したミッションは、きょうの一番上に持ち越して最優先にする（チェックした分もこの画面を開いている間は表示を残す） */
   const carry = D.plan.filter(function (p) {
-    if (!(p.date < D.today)) return false;
+    if (!(p.date < D.today) || isOptionalPlan(p)) return false;
     if (!p.done) CARRY_SEEN[p.row] = true;
     return !p.done || CARRY_SEEN[p.row];
   }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : a.row - b.row; });
   const carryLeft = carry.filter(function (p) { return !p.done; }).length;
-  const tasks = carry.concat(D.plan.filter(function (p) { return p.date === D.today; }));
+  const tasks = carry.concat(D.plan.filter(function (p) { return p.date === D.today && !isOptionalPlan(p); }));
+  const optional = D.plan.filter(function (p) { return isOptionalPlan(p) && (!p.done || CARRY_SEEN['o' + p.row]); });
+  optional.forEach(function (p) { if (!p.done) CARRY_SEEN['o' + p.row] = true; });
   const studied = D.log.filter(function (l) { return l.date === D.today; }).reduce(function (s, l) { return s + l.minutes; }, 0);
   const goal = day ? day.hours * 60 : 0;
   let h = progressPanel();
@@ -252,13 +257,26 @@ function viewToday() {
   }
   h += '</section>';
 
+  /* 時間があれば（ミッションが全部終わって、時間が余ったときだけ） */
+  if (optional.length) {
+    h += '<section class="q-card"><div class="q-card-head"><h3>時間があれば</h3><span class="q-card-sub">ミッションが全部終わって時間が余ったときだけ</span></div>' +
+      '<div class="table-wrap"><table><tr><th style="width:52px">済</th><th style="width:90px">教科</th><th>内容</th><th class="num">目安</th><th></th></tr>' +
+      optional.map(function (t) {
+        const pk = parkOf(t.subject);
+        return '<tr class="optional-row' + (t.done ? ' done' : '') + '"><td><input type="checkbox" ' + (t.done ? 'checked' : '') +
+          ' onchange="togglePlan(' + t.row + ', this.checked)"></td><td><span class="subj-tag" style="background:' + pk.color + '">' + esc(t.subject) + '</span></td><td>' +
+          esc(t.task) + '</td><td class="num">' + (t.minutes ? hm(t.minutes) : '') + '</td><td class="num">' +
+          (t.filter ? '<button class="btn" onclick="' + launch({ filterText: t.filter, subject: t.subject }, t.subject + '：' + t.task) + '">解く</button>' : '') + '</td></tr>';
+      }).join('') + '</table></div></section>';
+  }
+
   /* ルートプラン（これからの予定） */
   const upcoming = D.days.filter(function (d) { return d.date > D.today; });
   if (upcoming.length) {
     h += '<section class="q-card"><div class="q-card-head"><h3>ルートプラン</h3><span class="q-card-sub">これからの予定</span></div>' +
       '<div class="table-wrap"><table><tr><th>日付</th><th class="num">勉強できる時間</th><th>やること</th></tr>' +
       upcoming.map(function (d) {
-        const ts = D.plan.filter(function (p) { return p.date === d.date; });
+        const ts = D.plan.filter(function (p) { return p.date === d.date && !isOptionalPlan(p); });
         return '<tr><td>' + jpDate(d.date) + '</td><td class="num">' + d.hours + '時間</td><td>' +
           (ts.length ? '<div class="plist">' + ts.map(function (t) {
             return '<div><span class="ps">' + esc(t.subject) + '</span><span class="pt">' + esc(t.task) + '</span><span class="pm">' + (t.minutes ? t.minutes + '分' : '') + '</span></div>';

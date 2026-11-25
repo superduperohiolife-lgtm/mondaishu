@@ -991,3 +991,4 @@ body.upload-page .done { padding: 26px 0 10px; text-align: center; font-size: 21
 tr.carry-row td { background: #fff8ef; }
 .carry-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 4px; background: #e8822a; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; text-decoration: none; }
 tr.done .carry-tag { background: #c9b8a6; }
+tr.optional-row td { color: #6b6b6b; }
