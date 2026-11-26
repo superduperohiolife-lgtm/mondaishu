@@ -992,3 +992,5 @@ tr.carry-row td { background: #fff8ef; }
 .carry-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 4px; background: #e8822a; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; text-decoration: none; }
 tr.done .carry-tag { background: #c9b8a6; }
 tr.optional-row td { color: #6b6b6b; }
+.up-tag { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 4px; border: 1px solid #c97a2a; color: #a05a14; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.up-tag.ok { border-color: #3f8a5a; color: #2f6f47; }

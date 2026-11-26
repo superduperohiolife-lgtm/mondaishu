@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>結輝の2学期中間クエスト</title>
 <link rel="stylesheet" href="login.css">
-<link rel="stylesheet" href="quest.css?v=20261125-1">
+<link rel="stylesheet" href="quest.css?v=20261126-1">
 </head>
 <body>
 <header class="q-header">
@@ -49,10 +49,10 @@
   </div>
 </div>
 
-<script src="api.js?v=20261125-1"></script>
+<script src="api.js?v=20261126-1"></script>
 <script>
 /* 古い画面が残っていたら1回だけ読み直す（GitHub Pages のキャッシュ対策）。直すたびに BUILD を変える */
-const BUILD = '20261125-1';
+const BUILD = '20261126-1';
 (function () {
   try {
     if (sessionStorage.getItem('reloaded') === BUILD) return;
@@ -211,16 +211,23 @@ function render() {
 /* ---------- きょう ---------- */
 /* 内容に「時間があれば」とある計画は、持ち越し・きょうのミッションに入れず、別の枠に出す（優先度いちばん下） */
 function isOptionalPlan(p) { return /時間があれば/.test(String(p.task)); }
+/* ミッションが終わったか：問題用紙のある計画は、丸付けした写真を全部の番号ぶん送ったら終わり。用紙のない計画（教科書を読む など）は完了チェックで終わり */
+function planFinished(p) { return p.upTotal > 0 ? !!p.uploaded : !!p.done; }
+function uploadTag(p) {
+  if (!(p.upTotal > 0)) return '';
+  return p.uploaded ? '<span class="up-tag ok">写真OK</span>' : '<span class="up-tag">写真 ' + p.upDone + '/' + p.upTotal + '</span>';
+}
 
 function viewToday() {
   const day = D.days.find(function (d) { return d.date === D.today; });
-  /* 前の日にやり残したミッションは、きょうの一番上に持ち越して最優先にする（チェックした分もこの画面を開いている間は表示を残す） */
+  /* 前の日にやり残したミッションは、きょうの一番上に持ち越して最優先にする。
+     完了チェックだけでは消えず、丸付けした写真を全部送ったら消える（この画面を開いている間は表示を残す） */
   const carry = D.plan.filter(function (p) {
     if (!(p.date < D.today) || isOptionalPlan(p)) return false;
-    if (!p.done) CARRY_SEEN[p.row] = true;
-    return !p.done || CARRY_SEEN[p.row];
+    if (!planFinished(p)) CARRY_SEEN[p.row] = true;
+    return !planFinished(p) || CARRY_SEEN[p.row];
   }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : a.row - b.row; });
-  const carryLeft = carry.filter(function (p) { return !p.done; }).length;
+  const carryLeft = carry.filter(function (p) { return !planFinished(p); }).length;
   const tasks = carry.concat(D.plan.filter(function (p) { return p.date === D.today && !isOptionalPlan(p); }));
   const optional = D.plan.filter(function (p) { return isOptionalPlan(p) && (!p.done || CARRY_SEEN['o' + p.row]); });
   optional.forEach(function (p) { if (!p.done) CARRY_SEEN['o' + p.row] = true; });
@@ -239,7 +246,7 @@ function viewToday() {
     '</div></section>';
 
   /* 今日のミッション */
-  h += '<section class="q-card"><div class="q-card-head"><h3>今日のミッション</h3><span class="q-card-sub">完了チェックで上のパークスタンプ帳が増えます</span></div>' +
+  h += '<section class="q-card"><div class="q-card-head"><h3>今日のミッション</h3><span class="q-card-sub">完了チェックでスタンプが増える。丸付けした写真を全部送ると持ち越しから消える</span></div>' +
     (carryLeft ? '<p class="carry-note">前の日の残り <b>' + carryLeft + '件</b>を先にやろう。オレンジの「持ち越し」から順に進める</p>' : '');
   if (!tasks.length) {
     h += '<p class="empty">きょうの計画はまだ入っていない</p>';
@@ -248,9 +255,9 @@ function viewToday() {
       tasks.map(function (t) {
         const pk = parkOf(t.subject);
         const isCarry = t.date < D.today;
-        return '<tr class="' + (t.done ? 'done' : '') + (isCarry ? ' carry-row' : '') + '"><td><input type="checkbox" ' + (t.done ? 'checked' : '') +
+        return '<tr class="' + (planFinished(t) ? 'done' : '') + (isCarry ? ' carry-row' : '') + '"><td><input type="checkbox" ' + (t.done ? 'checked' : '') +
           ' onchange="togglePlan(' + t.row + ', this.checked)"></td><td><span class="subj-tag" style="background:' + pk.color + '">' + esc(t.subject) + '</span></td><td>' +
-          (isCarry ? '<span class="carry-tag">持ち越し ' + esc(jpDate(t.date)) + '分</span>' : '') + esc(t.task) +
+          (isCarry ? '<span class="carry-tag">持ち越し ' + esc(jpDate(t.date)) + '分</span>' : '') + esc(t.task) + uploadTag(t) +
           '</td><td class="num">' + (t.minutes ? hm(t.minutes) : '') + '</td><td class="num">' +
           (t.filter ? '<button class="btn" onclick="' + launch({ filterText: t.filter, subject: t.subject }, t.subject + '：' + t.task) + '">解く</button>' : '') + '</td></tr>';
       }).join('') + '</table></div>';
